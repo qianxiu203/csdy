@@ -1,27 +1,43 @@
 // =============================================================================
-// 🟢 用户配置区域 (主账号: 订阅管理)
+// 🟢 用户配置区域 (主控端: 极速缓存版)
 // =============================================================================
-const UUID = ""; // 你的 UUID
-const WEB_PASSWORD = "";  // 管理面板密码
-const SUB_PASSWORD = "";  // 订阅路径密码
+const UUID = ""; 
+const WEB_PASSWORD = "";  
+const SUB_PASSWORD = "";  
 const DEFAULT_PROXY_IP = ""; 
 const NODE_DEFAULT_PATH = "/api/v1"; 
 const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
 
 const PT_TYPE = 'v'+'l'+'e'+'s'+'s';
 
+// 🚀 全局缓存池 (利用 Cloudflare Isolate 机制降低外部 API 延迟)
+let globalCache = {
+    ips: null,
+    ipsTime: 0,
+    uuid: null,
+    uuidTime: 0
+};
+const CACHE_TTL = 600 * 1000; // IP 列表缓存 10 分钟 (单位: 毫秒)
+
 function getEnv(env, key, fallback) { return env[key] || fallback; }
 
+// 优化: 缓存动态 UUID 计算结果
 async function getDynamicUUID(key, refresh = 86400) {
     const time = Math.floor(Date.now() / 1000 / refresh);
+    if (globalCache.uuid && globalCache.uuidTime === time) return globalCache.uuid;
+
     const msg = new TextEncoder().encode(`${key}-${time}`);
     const hash = await crypto.subtle.digest('SHA-256', msg);
     const b = new Uint8Array(hash);
-    return [...b.slice(0, 16)].map(n => n.toString(16).padStart(2, '0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+    const newUuid = [...b.slice(0, 16)].map(n => n.toString(16).padStart(2, '0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+    
+    globalCache.uuid = newUuid;
+    globalCache.uuidTime = time;
+    return newUuid;
 }
 
 // =============================================================================
-// 🎨 面板 UI 代码
+// 🎨 面板 UI 代码 (保持不变)
 // =============================================================================
 const COMMON_STYLE = `
     :root { --bg-color: #f0f0f0; --card-bg: #ffffff; --primary-color: #ff4757; --secondary-color: #3742fa; --accent-color: #ffa502; --text-main: #2f3542; --border-color: #000000; --shadow-offset: 4px; }
@@ -106,12 +122,18 @@ function dashPage(host, uuid, proxyip, subpass) {
 }
 
 // =============================================================================
-// 🟢 订阅处理逻辑
+// 🟢 核心节点生成与处理逻辑
 // =============================================================================
 function isSubPath(pw, url) { return pw && url.pathname === `/${pw}`; }
 function isNormalSub(uuid, url) { return url.pathname === '/sub' && url.searchParams.get('uuid') === uuid; }
 
+// 优化: IP 列表拉取增加内存缓存机制
 async function getCustomIPs(env) {
+    const now = Date.now();
+    if (globalCache.ips && (now - globalCache.ipsTime < CACHE_TTL)) {
+        return globalCache.ips;
+    }
+
     let ips = getEnv(env, 'ADD', "");
     const addApi = getEnv(env, 'ADDAPI', "");
     const addCsv = getEnv(env, 'ADDCSV', "");
@@ -129,6 +151,9 @@ async function getCustomIPs(env) {
             try { const res = await fetch(url.trim(), { headers: { 'User-Agent': 'Mozilla/5.0' } }); if (res.ok) { const text = await res.text(); const lines = text.split('\n'); for (let line of lines) { const parts = line.split(','); if (parts.length >= 2) ips += `\n${parts[0].trim()}:443#${parts[1].trim()}`; } } } catch (e) {}
         }
     }
+    
+    globalCache.ips = ips;
+    globalCache.ipsTime = now;
     return ips;
 }
 
@@ -188,18 +213,27 @@ export default {
       let _ROOT_REDIRECT = getEnv(env, 'ROOT_REDIRECT_URL', ROOT_REDIRECT_URL);
       if (!_ROOT_REDIRECT.includes('://')) _ROOT_REDIRECT = 'https://' + _ROOT_REDIRECT;
 
-      // 1. 订阅下发
+      // 1. 订阅分发 (添加严格防缓存控制)
       if (isSubPath(_SUB_PW, url) || isNormalSub(_UUID, url)) {
           const requestProxyIp = url.searchParams.get('proxyip') || _PROXY_IP;
           const allIPs = await getCustomIPs(env);
           const listText = genNodes(_POOL_DOMAINS, _UUID, requestProxyIp, allIPs, _PS, _PROXY_IP);
-          return new Response(btoa(unescape(encodeURIComponent(listText))), { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+          
+          return new Response(btoa(unescape(encodeURIComponent(listText))), { 
+              status: 200, 
+              headers: { 
+                  'Content-Type': 'text/plain; charset=utf-8',
+                  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
+              } 
+          });
       }
 
-      // 2. 根目录重定向
+      // 2. 根目录防探测跳转
       if (url.pathname === '/') return Response.redirect(_ROOT_REDIRECT, 302);
       
-      // 3. 后台管理面板
+      // 3. 管理面板
       if (url.pathname === '/admin' || url.pathname === '/admin/') {
           if (_WEB_PW) {
               const cookie = r.headers.get('Cookie') || "";
@@ -208,12 +242,12 @@ export default {
           return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW), { status: 200, headers: {'Content-Type': 'text/html'} });
       }
 
-      // 4. 伪装 API 探针响应
+      // 4. API 探针伪装
       if (url.pathname === NODE_DEFAULT_PATH) {
           return new Response(JSON.stringify({ status: "ok", version: "1.0.0" }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
 
-      // 5. 兜底处理 (包含被移除的 WebSocket 拦截)
+      // 5. 非法路径兜底
       return new Response('Not Found', { status: 404 });
 
     } catch (err) {
