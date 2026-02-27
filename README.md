@@ -37,5 +37,5 @@
 | `WEB_PASSWORD` | **是** | 管理面板登录密码（明文存储，建议高强度随机字符串） |
 | `SUB_PASSWORD` | **是** | 订阅链接的专属路径密钥。最终订阅地址为 `https://<主控域名>/<SUB_PASSWORD>` |
 | `POOL_DOMAINS` | **是** | 流量承载池域名列表。**所有**部署了节点端代码的域名，英文逗号分隔，如：`node1.com,node2.com,node3.com` |
-| `ROOT_REDIRECT_URL` | 否 | 根目录防探测跳转地址，默认 `https://cn.bing.com`。必须是完整 URL（含 https://） |
-| `PROXYIP` | 否 | 默认 Cloudflare 优选 IP 或反代 IP（兜底使用）。支持 `ip:port` 或纯 IP（默认 443） |
+| `ROOT_REDIRECT_URL` | **否**  | 根目录防探测跳转地址，默认 `https://cn.bing.com`。必须是完整 URL（含 https://） |
+| `PROXYIP` | **是**  | 默认 Cloudflare 优选 IP 或反代 IP（兜底使用）。支持 `ip:port` 或纯 IP（默认 443） |
