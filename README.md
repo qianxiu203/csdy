@@ -39,3 +39,5 @@
 | `POOL_DOMAINS` | **是** | 流量承载池域名列表。**所有**部署了节点端代码的域名，英文逗号分隔，如：`node1.com,node2.com,node3.com` |
 | `ROOT_REDIRECT_URL` | **否**  | 根目录防探测跳转地址，默认 `https://cn.bing.com`。必须是完整 URL（含 https://） |
 | `PROXYIP` | **是**  | 默认 Cloudflare 优选 IP 或反代 IP（兜底使用）。支持 `ip:port` 或纯 IP（默认 443） |
+## 4. 路由与访问控制
+| `/admin` | 管理面板路径地址 
