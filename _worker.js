@@ -6,7 +6,7 @@ const WEB_PASSWORD = "";  // 管理面板密码
 const SUB_PASSWORD = "";  // 订阅路径密码
 const DEFAULT_PROXY_IP = ""; 
 const NODE_DEFAULT_PATH = "/api/v1"; 
-const ROOT_REDIRECT_URL = ""; 
+const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
 
 const PT_TYPE = 'v'+'l'+'e'+'s'+'s';
 
@@ -174,11 +174,6 @@ export default {
     try {
       const url = new URL(r.url);
       const host = url.hostname; 
-      
-      // 拦截 WebSocket，主控节点拒绝承载流量
-      if (r.headers.get('Upgrade') === 'websocket') {
-          return new Response('Not Found', { status: 404 });
-      }
 
       const _UUID = env.KEY ? await getDynamicUUID(env.KEY) : getEnv(env, 'UUID', UUID);
       const _WEB_PW = getEnv(env, 'WEB_PASSWORD', WEB_PASSWORD);
@@ -193,7 +188,7 @@ export default {
       let _ROOT_REDIRECT = getEnv(env, 'ROOT_REDIRECT_URL', ROOT_REDIRECT_URL);
       if (!_ROOT_REDIRECT.includes('://')) _ROOT_REDIRECT = 'https://' + _ROOT_REDIRECT;
 
-      // 订阅下发
+      // 1. 订阅下发
       if (isSubPath(_SUB_PW, url) || isNormalSub(_UUID, url)) {
           const requestProxyIp = url.searchParams.get('proxyip') || _PROXY_IP;
           const allIPs = await getCustomIPs(env);
@@ -201,9 +196,10 @@ export default {
           return new Response(btoa(unescape(encodeURIComponent(listText))), { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
       }
 
-      // 路由处理
+      // 2. 根目录重定向
       if (url.pathname === '/') return Response.redirect(_ROOT_REDIRECT, 302);
       
+      // 3. 后台管理面板
       if (url.pathname === '/admin' || url.pathname === '/admin/') {
           if (_WEB_PW) {
               const cookie = r.headers.get('Cookie') || "";
@@ -212,11 +208,12 @@ export default {
           return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW), { status: 200, headers: {'Content-Type': 'text/html'} });
       }
 
-      // 伪装探测 API
+      // 4. 伪装 API 探针响应
       if (url.pathname === NODE_DEFAULT_PATH) {
           return new Response(JSON.stringify({ status: "ok", version: "1.0.0" }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
 
+      // 5. 兜底处理 (包含被移除的 WebSocket 拦截)
       return new Response('Not Found', { status: 404 });
 
     } catch (err) {
