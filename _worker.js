@@ -10,7 +10,7 @@ const ROOT_REDIRECT_URL = "https://cn.bing.com";
 
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
 const DEFAULT_ECH_ENABLED = 'no';
-const DEFAULT_ECH_DOH = 'https://dns.joeyblog.eu.org/joeyblog';
+const DEFAULT_ECH_DOH = '';
 const DEFAULT_ECH_QUERY_SERVER_NAME = 'cloudflare-ech.com';
 
 // =============================================================================
