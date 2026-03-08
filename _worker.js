@@ -486,8 +486,8 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     </div>
                 </div>
                 <div class="input-group">
-                    <label class="input-label">参数注入：ProxyIP（可选）</label>
-                    <input type="text" id="customIP" value="${proxyip}" placeholder="例如：cf.proxy.com" oninput="updateLink()">
+                    <label class="input-label">参数注入：ProxyIP（可选，留空使用默认）</label>
+                    <input type="text" id="customIP" value="" placeholder="默认：${proxyip || '未设置'}；手动覆盖时才注入" oninput="updateLink()">
                 </div>
                 <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border);">
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">ECH 当前状态</div>
@@ -498,7 +498,8 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     <label class="input-label">系统环境信息</label>
                     <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
                         UUID: ${uuid}<br>
-                        PATH: ${NODE_DEFAULT_PATH}
+                        PATH: ${NODE_DEFAULT_PATH}<br>
+                        DEFAULT_PROXY_IP: ${proxyip || '未设置'}
                     </div>
                 </div>
             </div>
