@@ -419,70 +419,160 @@ function loginPage() {
 // =============================================================================
 function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0) {
     const domainsJson = JSON.stringify(poolDomains);
-    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Edge Dashboard</title><style>${COMMON_STYLE}</style>${THEME_SCRIPT}</head><body>
-    <div class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-            <div>
-                <h1 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">调度中心</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">${host}</p>
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>边缘节点池控制台</title><style>${COMMON_STYLE}
+    .console-shell { max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    .console-header {
+        display:flex; align-items:center; justify-content:space-between; gap:1rem;
+        padding: 1rem 0 2rem; margin-bottom: 0.5rem;
+    }
+    .console-brand { display:flex; align-items:center; gap:0.85rem; }
+    .console-logo {
+        width:40px; height:40px; border-radius:12px; display:grid; place-items:center;
+        background: linear-gradient(135deg, #94a3b8, #64748b); color:white; font-size:20px;
+        box-shadow: 0 10px 30px rgba(100,116,139,0.18);
+    }
+    .console-title { display:flex; flex-direction:column; gap:0.15rem; }
+    .console-title strong { font-size:1.1rem; }
+    .console-title span { color:var(--text-muted); font-size:0.85rem; font-family:monospace; }
+    .header-actions { display:flex; align-items:center; gap:0.75rem; }
+    .header-actions .btn { width:auto; min-width:unset; }
+    .summary-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1rem; margin-bottom:1rem; }
+    .summary-card { min-height:136px; display:flex; flex-direction:column; justify-content:space-between; }
+    .summary-label { color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .summary-value { font-size:2rem; font-weight:800; line-height:1; }
+    .summary-note { color:var(--text-muted); font-size:0.85rem; }
+    .summary-card.highlight { border-color: rgba(79,70,229,0.28); box-shadow: 0 12px 32px rgba(79,70,229,0.10); }
+    .summary-card.highlight .summary-value { color: var(--primary); }
+    .main-grid { display:grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap:1rem; margin-top:1rem; }
+    .stack { display:flex; flex-direction:column; gap:1rem; }
+    .card-header-row { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.25rem; }
+    .card-header-row .muted { color:var(--text-muted); font-size:0.85rem; }
+    .sub-link-row { display:flex; gap:0.75rem; align-items:center; }
+    .sub-link-row input { font-family:monospace; font-size:0.85rem; }
+    .sub-link-row .btn { width:120px; flex:0 0 120px; }
+    .param-grid { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0.75rem; align-items:end; }
+    .param-box {
+        margin-top: 1rem; border:1px dashed var(--border); border-radius:12px; padding:1rem;
+        background: color-mix(in srgb, var(--bg-page) 82%, transparent);
+    }
+    .param-box pre {
+        margin:0; white-space:pre-wrap; word-break:break-all; font-size:0.8rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--text-main);
+    }
+    .domain-list { display:flex; flex-direction:column; gap:0.65rem; max-height:280px; overflow:auto; }
+    .list-item { background: color-mix(in srgb, var(--bg-page) 88%, transparent); }
+    .list-item.active { box-shadow: 0 10px 24px rgba(79,70,229,0.10); }
+    .domain-name { font-size:0.92rem; font-weight:700; word-break:break-all; }
+    .domain-index { font-size:0.75rem; color:var(--text-muted); font-family:monospace; }
+    .switch-row { display:grid; grid-template-columns:minmax(0,1fr) 136px; gap:0.75rem; align-items:end; margin-top:1rem; }
+    .footer-card { margin-top:1rem; }
+    .footer-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem; }
+    .small-note { color:var(--text-muted); font-size:0.82rem; line-height:1.6; }
+    @media (max-width: 960px) {
+        .summary-grid, .main-grid, .footer-grid { grid-template-columns:1fr; }
+        .sub-link-row, .param-grid, .switch-row { grid-template-columns:1fr; }
+        .sub-link-row .btn, .switch-row .btn { width:100%; flex:auto; }
+        .console-header { align-items:flex-start; flex-direction:column; }
+    }
+    </style>${THEME_SCRIPT}</head><body>
+    <div class="console-shell">
+        <header class="console-header">
+            <div class="console-brand">
+                <div class="console-logo">🧭</div>
+                <div class="console-title">
+                    <strong>边缘节点池</strong>
+                    <span>${host}</span>
+                </div>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-ghost" onclick="setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')" title="切换主题">🌓</button>
+            <div class="header-actions">
+                <button class="btn btn-ghost" onclick="setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')" title="切换主题">🌓 主题</button>
                 <button class="btn btn-ghost" onclick="logout()">退出</button>
             </div>
         </header>
 
-        <section class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">域名池状态</div>
-                <div style="font-size: 1.75rem; font-weight: 800;">${poolDomains.length} <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-muted);">Nodes</span></div>
+        <section class="summary-grid">
+            <div class="card summary-card">
+                <div class="summary-label">域名池状态</div>
+                <div class="summary-value">${poolDomains.length}</div>
+                <div class="summary-note">已接入域名节点</div>
             </div>
-            <div class="card" style="padding: 1.25rem; border-bottom: 3px solid var(--primary);">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">当前索引</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary);"># ${activeIndex}</div>
+            <div class="card summary-card highlight">
+                <div class="summary-label">当前索引</div>
+                <div class="summary-value"># ${activeIndex}</div>
+                <div class="summary-note">当前轮转中的活动域名</div>
             </div>
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">可用 IP 数</div>
-                <div style="font-size: 1.75rem; font-weight: 800;">${nodeCount}</div>
+            <div class="card summary-card">
+                <div class="summary-label">可用 IP 数</div>
+                <div class="summary-value">${nodeCount}</div>
+                <div class="summary-note">来自 ADD / ADDAPI / ADDCSV</div>
             </div>
         </section>
 
-        <main class="grid">
-            <div class="card">
-                <div class="card-header">🔗 订阅分发</div>
-                <div class="input-group">
-                    <label class="input-label">主订阅链接</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="subLink" value="https://${host}/${subpass}" readonly style="font-family: monospace; font-size: 0.85rem;">
-                        <button class="btn btn-primary" onclick="copyVal('subLink')">复制</button>
+        <section class="main-grid">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header-row">
+                        <div class="card-header">🔗 订阅分发</div>
+                        <div class="muted">输入参数后，链接实时更新</div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">主订阅链接</label>
+                        <div class="sub-link-row">
+                            <input type="text" id="subLink" value="https://${host}/${subpass}" readonly>
+                            <button class="btn btn-primary" onclick="copyVal('subLink')">复制链接</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">参数注入：ProxyIP（可选）</label>
+                        <div class="param-grid">
+                            <input type="text" id="customIP" value="${proxyip}" placeholder="例如：cf.proxy.com" oninput="updateLink()">
+                            <button class="btn btn-ghost" onclick="resetProxyInput()">恢复默认</button>
+                        </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label class="input-label">参数注入：ProxyIP（可选）</label>
-                    <input type="text" id="customIP" value="${proxyip}" placeholder="例如：cf.proxy.com" oninput="updateLink()">
-                </div>
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
-                    <label class="input-label">系统环境信息</label>
-                    <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
-                        UUID: ${uuid}<br>
-                        PATH: ${NODE_DEFAULT_PATH}
+
+                <div class="card footer-card">
+                    <div class="card-header-row">
+                        <div class="card-header">⚙️ 运行参数</div>
+                        <div class="muted">部署与订阅生成所需的关键参数</div>
+                    </div>
+                    <div class="param-box">
+                        <pre>UUID: ${uuid}
+PATH: ${NODE_DEFAULT_PATH}
+默认 ProxyIP: ${proxyip || '未设置'}
+订阅路径: /${subpass || '未设置'}</pre>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">🔁 域名切换池</div>
-                <div id="domainList" style="margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto;"></div>
-                
-                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label class="input-label">手动强制切换索引</label>
-                        <input type="number" id="targetIdx" placeholder="0 - ${poolDomains.length - 1}" min="0">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header-row">
+                        <div class="card-header">🔁 域名切换池</div>
+                        <div class="muted">当前域名高亮显示</div>
                     </div>
-                    <button class="btn btn-primary" onclick="switchDomain()">立即执行</button>
+                    <div id="domainList" class="domain-list"></div>
+                    <div class="switch-row">
+                        <div>
+                            <label class="input-label">手动切换到指定索引</label>
+                            <input type="number" id="targetIdx" placeholder="0 - ${poolDomains.length - 1}" min="0">
+                        </div>
+                        <button class="btn btn-primary" onclick="switchDomain()">执行切换</button>
+                    </div>
+                </div>
+
+                <div class="card footer-card">
+                    <div class="card-header-row">
+                        <div class="card-header">ℹ️ 操作说明</div>
+                        <div class="muted">保持现有后端逻辑不变</div>
+                    </div>
+                    <div class="footer-grid">
+                        <div class="small-note">订阅链接会基于当前站点和订阅路径自动生成；填写 ProxyIP 后，会即时附加到查询参数中。</div>
+                        <div class="small-note">域名切换只会修改当前活动索引，不会改变节点池内容。切换成功后页面会自动刷新。</div>
+                    </div>
                 </div>
             </div>
-        </main>
+        </section>
     </div>
 
     <div id="toast"></div>
@@ -491,17 +581,18 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
     const domains = ${domainsJson};
     const activeIdx = ${activeIndex};
     const subPass = "${subpass}";
+    const defaultProxyIP = "${proxyip}";
 
     function renderDomains() {
         const list = document.getElementById('domainList');
         list.innerHTML = domains.map((d, i) => {
             const activeClass = i === activeIdx ? 'active' : '';
             const badgeClass = i === activeIdx ? 'badge-success' : 'badge-muted';
-            const badgeText = i === activeIdx ? 'ACTIVE' : 'STANDBY';
+            const badgeText = i === activeIdx ? '当前使用' : '备用节点';
             return '<div class="list-item ' + activeClass + '">' +
-                '<div style="display: flex; flex-direction: column;">' +
-                    '<span style="font-size: 0.9rem; font-weight: 600;">' + d + '</span>' +
-                    '<span style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Index: ' + i + '</span>' +
+                '<div style="display:flex; flex-direction:column; gap:0.2rem;">' +
+                    '<span class="domain-name">' + d + '</span>' +
+                    '<span class="domain-index">索引: ' + i + '</span>' +
                 '</div>' +
                 '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
             '</div>';
@@ -510,40 +601,52 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
 
     function updateLink() {
         const ip = document.getElementById('customIP').value.trim();
-        const base = "https://" + window.location.hostname + "/" + subPass;
-        document.getElementById('subLink').value = ip ? base + "?proxyip=" + ip : base;
+        const base = 'https://' + window.location.hostname + '/' + subPass;
+        document.getElementById('subLink').value = ip ? base + '?proxyip=' + ip : base;
+    }
+
+    function resetProxyInput() {
+        document.getElementById('customIP').value = defaultProxyIP;
+        updateLink();
+        showToast('已恢复默认 ProxyIP');
     }
 
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg;
         t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
+        setTimeout(() => t.classList.remove('show'), 2200);
     }
 
     function copyVal(id) {
         const el = document.getElementById(id);
         el.select();
         document.execCommand('copy');
-        showToast("已成功复制到剪贴板");
+        showToast('复制成功');
     }
 
     async function switchDomain() {
         const idx = document.getElementById('targetIdx').value;
-        if(idx === "") return;
-        const res = await fetch('/admin/switch?index=' + idx);
-        if(res.ok) {
-            showToast("正在应用调度策略...");
-            setTimeout(() => location.reload(), 800);
+        if (idx === '') {
+            showToast('请输入要切换的索引');
+            return;
         }
+        const res = await fetch('/admin/switch?index=' + idx);
+        if (res.ok) {
+            showToast('切换成功');
+            setTimeout(() => location.reload(), 700);
+            return;
+        }
+        showToast('切换失败');
     }
 
     function logout() {
-        document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+        document.cookie = 'auth=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
         location.reload();
     }
 
     renderDomains();
+    updateLink();
     </script></body></html>`;
 }
 
@@ -653,6 +756,7 @@ export default {
         } catch (e) { return new Response(e.stack, { status: 500 }); }
     }
 };
+
 
 
 
