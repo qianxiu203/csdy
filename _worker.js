@@ -559,7 +559,7 @@ async function getCustomIPs(env) {
     
     if (addApi) {
         for (const url of addApi.split('\n').filter(u => u.trim())) {
-            try { const r = await fetch(url.trim()); if (r.ok) ips += "\\n" + await r.text(); } catch(e){}
+            try { const r = await fetch(url.trim()); if (r.ok) ips += "\n" + await r.text(); } catch(e){}
         }
     }
     if (addCsv) {
@@ -568,9 +568,9 @@ async function getCustomIPs(env) {
                 const r = await fetch(url.trim()); 
                 if (r.ok) {
                     const text = await r.text();
-                    text.split('\\n').forEach(line => {
+                    text.split('\n').forEach(line => {
                         const p = line.split(',');
-                        if (p.length >= 2) ips += `\\n${p[0].trim()}:443#${p[1].trim()}`;
+                        if (p.length >= 2) ips += `\n${p[0].trim()}:443#${p[1].trim()}`;
                     });
                 }
             } catch(e){}
@@ -580,7 +580,7 @@ async function getCustomIPs(env) {
 }
 
 function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "") {
-    const lines = ipsText.split('\\n').filter(l => l.trim());
+    const lines = ipsText.split('\n').filter(l => l.trim());
     const finalPath = (p && p.trim() !== defaultIP) ? `${NODE_DEFAULT_PATH}?proxyip=${p.trim()}` : NODE_DEFAULT_PATH;
     
     return lines.map(line => {
@@ -592,8 +592,8 @@ function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "") {
         return hosts.map((h, i) => {
             const nName = `${name || 'Edge'}${hosts.length > 1 ? '-N'+(i+1) : ''} ${ps}`.trim();
             return `${PT_TYPE}://${u}@${ip}:${port}?encryption=none&security=tls&sni=${h}&alpn=h3&fp=random&allowInsecure=1&type=ws&host=${h}&path=${encodeURIComponent(finalPath)}#${encodeURIComponent(nName)}`;
-        }).join('\\n');
-    }).filter(Boolean).join('\\n');
+        }).join('\n');
+    }).filter(Boolean).join('\n');
 }
 
 export default {
@@ -605,7 +605,7 @@ export default {
             const _WEB_PW = getEnv(env, 'WEB_PASSWORD', WEB_PASSWORD);
             const _SUB_PW = getEnv(env, 'SUB_PASSWORD', SUB_PASSWORD);
             const _PROXY_IP_RAW = env.PROXYIP || env.DEFAULT_PROXY_IP || DEFAULT_PROXY_IP;
-            const _PROXY_IP = _PROXY_IP_RAW ? _PROXY_IP_RAW.split(/[\\n,]/)[0].trim() : "";
+            const _PROXY_IP = _PROXY_IP_RAW ? _PROXY_IP_RAW.split(/[\n,]/)[0].trim() : "";
             const _PS = getEnv(env, 'PS', "");
             const _POOL_DOMAINS = getEnv(env, 'POOL_DOMAINS', host).split(',').map(d => d.trim()).filter(Boolean);
 
@@ -644,7 +644,7 @@ export default {
                     idx = parseInt(stored, 10) || 0;
                 }
                 const allIPs = await getCustomIPs(env);
-                const count = allIPs.split('\\n').filter(l => l.trim()).length;
+                const count = allIPs.split('\n').filter(l => l.trim()).length;
                 return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count), { headers: { 'Content-Type': 'text/html' } });
             }
 
