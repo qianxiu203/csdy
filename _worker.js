@@ -10,7 +10,7 @@ const ROOT_REDIRECT_URL = "https://cn.bing.com";
 
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
 const DEFAULT_ECH_ENABLED = 'no';
-const DEFAULT_ECH_DOH = '';
+const DEFAULT_ECH_DOH = 'https://dns.joeyblog.eu.org/joeyblog';
 const DEFAULT_ECH_QUERY_SERVER_NAME = 'cloudflare-ech.com';
 
 // =============================================================================
@@ -539,13 +539,9 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border); font-family: monospace; font-size: 0.82rem; line-height: 1.7; word-break: break-all;">
                     <div>状态：<span id="echStatusText">读取中...</span></div>
-                    <div>当前 DoH：<span id="echStatusDoh">-</span></div>
-                    <div>当前 ECH 域名：<span id="echStatusQueryName">-</span></div>
+                    <div>当前使用 DoH：<span id="echStatusDoh">-</span></div>
+                    <div>当前使用 ECH 域名：<span id="echStatusQueryName">-</span></div>
                     <div>配置来源：<span id="echStatusSource">-</span></div>
-                    <div>环境变量 DoH：<span id="echEnvDoh">-</span></div>
-                    <div>环境变量 ECH 域名：<span id="echEnvQueryName">-</span></div>
-                    <div>代码默认 DoH：<span id="echDefaultDoh">-</span></div>
-                    <div>代码默认 ECH 域名：<span id="echDefaultQueryName">-</span></div>
                 </div>
             </div>
         </main>
@@ -594,10 +590,6 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         document.getElementById('echStatusDoh').textContent = echState.doh || '-';
         document.getElementById('echStatusQueryName').textContent = echState.queryServerName || '-';
         document.getElementById('echStatusSource').textContent = echState.source || '-';
-        document.getElementById('echEnvDoh').textContent = echState.envDoh || '-';
-        document.getElementById('echEnvQueryName').textContent = echState.envQueryServerName || '-';
-        document.getElementById('echDefaultDoh').textContent = echState.defaultDoh || '-';
-        document.getElementById('echDefaultQueryName').textContent = echState.defaultQueryServerName || '-';
         document.getElementById('subEchStatus').textContent = enabled ? 'ECH 已启用' : 'ECH 未启用';
         document.getElementById('subEchStatus').style.color = statusColor;
         document.getElementById('subEchDesc').textContent = enabled
@@ -694,14 +686,22 @@ function normalizeYesNo(value, fallback = 'no') {
 }
 
 async function readEchConfig(env) {
-    const envEnabled = normalizeYesNo(getEnv(env, 'ECH', DEFAULT_ECH_ENABLED), DEFAULT_ECH_ENABLED);
-    const envDoh = String(getEnv(env, 'ECH_DOH', DEFAULT_ECH_DOH) || DEFAULT_ECH_DOH).trim() || DEFAULT_ECH_DOH;
-    const envQueryServerName = String(getEnv(env, 'ECH_QUERY_SERVER_NAME', DEFAULT_ECH_QUERY_SERVER_NAME) || DEFAULT_ECH_QUERY_SERVER_NAME).trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+    const rawEnvEnabled = env.ECH;
+    const rawEnvDoh = env.ECH_DOH;
+    const rawEnvQueryServerName = env.ECH_QUERY_SERVER_NAME;
 
-    let enabled = envEnabled;
-    let doh = envDoh;
-    let queryServerName = envQueryServerName;
-    let source = 'environment';
+    const hasEnvEnabled = rawEnvEnabled !== undefined && rawEnvEnabled !== null && String(rawEnvEnabled).trim() !== '';
+    const hasEnvDoh = rawEnvDoh !== undefined && rawEnvDoh !== null && String(rawEnvDoh).trim() !== '';
+    const hasEnvQueryServerName = rawEnvQueryServerName !== undefined && rawEnvQueryServerName !== null && String(rawEnvQueryServerName).trim() !== '';
+
+    const envEnabled = hasEnvEnabled ? normalizeYesNo(rawEnvEnabled, DEFAULT_ECH_ENABLED) : DEFAULT_ECH_ENABLED;
+    const envDoh = hasEnvDoh ? String(rawEnvDoh).trim() : '';
+    const envQueryServerName = hasEnvQueryServerName ? String(rawEnvQueryServerName).trim() : '';
+
+    let enabled = normalizeYesNo(DEFAULT_ECH_ENABLED, DEFAULT_ECH_ENABLED);
+    let doh = DEFAULT_ECH_DOH;
+    let queryServerName = DEFAULT_ECH_QUERY_SERVER_NAME;
+    let source = 'default';
 
     if (env.POOL_STATE) {
         const [kvEnabled, kvDoh, kvQueryServerName] = await Promise.all([
@@ -711,11 +711,24 @@ async function readEchConfig(env) {
         ]);
 
         if (kvEnabled !== null || kvDoh !== null || kvQueryServerName !== null) {
-            enabled = normalizeYesNo(kvEnabled, envEnabled);
-            doh = String(kvDoh || envDoh || DEFAULT_ECH_DOH).trim() || DEFAULT_ECH_DOH;
-            queryServerName = String(kvQueryServerName || envQueryServerName || DEFAULT_ECH_QUERY_SERVER_NAME).trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+            enabled = normalizeYesNo(kvEnabled, DEFAULT_ECH_ENABLED);
+            doh = String(kvDoh || '').trim() || DEFAULT_ECH_DOH;
+            queryServerName = String(kvQueryServerName || '').trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
             source = 'kv';
         }
+    }
+
+    if (hasEnvEnabled) {
+        enabled = envEnabled;
+        source = 'environment';
+    }
+    if (hasEnvDoh) {
+        doh = envDoh;
+        source = 'environment';
+    }
+    if (hasEnvQueryServerName) {
+        queryServerName = envQueryServerName;
+        source = 'environment';
     }
 
     return {
@@ -724,9 +737,9 @@ async function readEchConfig(env) {
         queryServerName,
         source,
         kvBound: !!env.POOL_STATE,
-        envEnabled: envEnabled === 'yes',
-        envDoh,
-        envQueryServerName,
+        envEnabled: hasEnvEnabled ? envEnabled === 'yes' : null,
+        envDoh: envDoh || '-',
+        envQueryServerName: envQueryServerName || '-',
         defaultDoh: DEFAULT_ECH_DOH,
         defaultQueryServerName: DEFAULT_ECH_QUERY_SERVER_NAME
     };
