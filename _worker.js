@@ -123,7 +123,7 @@ function loginPage() {
         radial-gradient(1200px 800px at 20% 60%, rgba(255,255,255,.12), transparent 50%),
         linear-gradient(135deg, var(--panel1), var(--panel2), var(--panel3));
     }
-    @media (min-width:1024px){ .left{ display:flex; flex-direction:column; justify-content:space-between; } }
+    @media (min-width:1024px){ .left{ display:flex; align-items:center; justify-content:center; } }
     .gridOverlay{
       position:absolute; inset:0; opacity:.12; z-index:0;
       background-image:
@@ -140,12 +140,8 @@ function loginPage() {
       display:grid; place-items:center; backdrop-filter: blur(6px);
       border:1px solid rgba(255,255,255,.22); font-size:18px;
     }
-    .leftCopy{ position:relative; z-index:2; max-width:420px; margin-top:32px; }
-    .leftCopy h2{ margin:0 0 14px; font-size:42px; line-height:1.05; }
-    .leftCopy p{ margin:0; color:rgba(255,255,255,.82); font-size:15px; line-height:1.7; }
-    .leftBottom{ position:relative; z-index:2; display:flex; gap:28px; font-size:14px; color:rgba(255,255,255,.75); }
-    .leftBottom a:hover{ color:#fff; }
-    .stageWrap{ position:relative; z-index:2; height:520px; display:flex; align-items:flex-end; justify-content:center; }
+    .leftTop{ position:absolute; top:48px; left:48px; z-index:2; }
+    .stageWrap{ position:relative; z-index:2; min-height:520px; display:flex; align-items:center; justify-content:center; }
     .stage{ position:relative; width:550px; height:400px; transform:translateY(12px); }
     .char{ position:absolute; bottom:0; transform-origin:bottom center; transition: all 700ms ease-in-out; }
     .purple{ left:70px; width:180px; height:400px; background:#6C3FF5; border-radius:10px 10px 0 0; z-index:1; }
@@ -162,7 +158,7 @@ function loginPage() {
     .pupilOnly{ width:12px; height:12px; }
     .yellowMouth{ position:absolute; width:80px; height:4px; background:#2D2D2D; border-radius:999px; left:40px; top:88px; transition:all 200ms ease-out; }
     .right{ display:flex; align-items:center; justify-content:center; padding:32px; background:var(--card-bg); }
-    .card{ width:100%; max-width:420px; }
+    .card{ width:100%; max-width:460px; min-height:520px; display:flex; flex-direction:column; justify-content:center; }
     .mobileBrand{ display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; margin-bottom:48px; }
     @media (min-width:1024px){ .mobileBrand{ display:none; } }
     h1{ margin:0 0 8px; text-align:center; font-size:32px; }
@@ -174,8 +170,6 @@ function loginPage() {
       font-size:15px; outline:none; background:transparent; color:var(--text);
     }
     input:focus{ border-color:var(--focus); box-shadow:0 0 0 4px rgba(148,163,184,.25); }
-    .rowBetween{ display:flex; align-items:center; justify-content:space-between; margin:8px 0 16px; font-size:14px; color:var(--muted); gap:12px; }
-    .hint{ color:var(--link); font-weight:600; }
     .pwWrap{ position:relative; }
     .eyeBtn{
       position:absolute; right:10px; top:50%; transform:translateY(-50%); width:36px; height:36px;
@@ -207,12 +201,8 @@ function loginPage() {
       <div class="gridOverlay"></div>
       <div class="blob b1"></div>
       <div class="blob b2"></div>
-      <div>
-        <div class="brand"><div class="logo">🧭</div><div>CareerCompass</div></div>
-        <div class="leftCopy">
-          
-          
-        </div>
+      <div class="leftTop">
+        <div class="brand"><div class="logo">🧭</div><div>边缘节点池</div></div>
       </div>
       <div class="stageWrap">
         <div class="stage" id="stage">
@@ -226,7 +216,7 @@ function loginPage() {
     </section>
     <section class="right">
       <div class="card">
-        <div class="mobileBrand"><div class="logo">🧭</div><div>CareerCompass</div></div>
+        <div class="mobileBrand"><div class="logo">🧭</div><div>边缘节点池</div></div>
         <h1>管理后台登录</h1>
         <p class="sub">请输入管理密码以继续访问控制台。</p>
         <form id="loginForm">
@@ -237,7 +227,6 @@ function loginPage() {
               <button id="togglePw" class="eyeBtn" type="button" aria-label="切换密码显示">👁</button>
             </div>
           </div>
-          <div class="rowBetween"><span>登录后将写入一年有效期 Cookie</span><span class="hint">路径：/admin</span></div>
           <button id="loginBtn" class="btn primary" type="submit">进入后台</button>
           <div id="errorBox" class="err"></div>
         </form>
