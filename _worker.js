@@ -8,10 +8,29 @@ const DEFAULT_PROXY_IP = "";  // 默认 Proxy IP
 const NODE_DEFAULT_PATH = "/api/v1"; 
 const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
 
+const ECH = "";
+const CUSTOM_DNS = "https://dns.joeyblog.eu.org/joeyblog";
+const CUSTOM_ECH_DOMAIN = "cloudflare-ech.com";
+const DEFAULT_WK = "";
+const REGION_MATCHING = "yes";
+
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
+const CONFIG_KEY = 'runtime_config';
+const REGION_ALIAS_MAP = {
+    US: ['US', 'USA', 'UNITED STATES', 'AMERICA'],
+    SG: ['SG', 'SINGAPORE'],
+    JP: ['JP', 'JAPAN', 'TOKYO'],
+    HK: ['HK', 'HONG KONG'],
+    KR: ['KR', 'KOREA', 'SOUTH KOREA'],
+    DE: ['DE', 'GERMANY'],
+    SE: ['SE', 'SWEDEN'],
+    NL: ['NL', 'NETHERLANDS'],
+    FI: ['FI', 'FINLAND'],
+    GB: ['GB', 'UK', 'UNITED KINGDOM', 'BRITAIN', 'ENGLAND']
+};
 
 // =============================================================================
-// UI 样式系统（现代工业风）
+// UI 样式系统
 // =============================================================================
 const COMMON_STYLE = `
 :root {
@@ -109,26 +128,19 @@ function loginPage() {
     [data-theme="dark"]{
       --text:#f8fafc; --muted:#94a3b8; --border:#334155; --link:#93c5fd;
       --card-bg:#0f172a; --focus:#64748b;
-      --panel1:#475569; --panel2:#334155; --panel3:#0f172a;
     }
-    *{ box-sizing:border-box; }
-    html,body{ margin:0; min-height:100%; }
-    body{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:var(--card-bg); }
-    a{ color:inherit; text-decoration:none; }
-    .page{ min-height:100vh; display:grid; grid-template-columns:1fr; background:var(--card-bg); }
-    @media (min-width:1024px){ .page{ grid-template-columns:1fr 1fr; } }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--card-bg)}
+    .page{min-height:100vh;display:grid;grid-template-columns:1.1fr 0.9fr}
+    @media (max-width:1024px){.page{grid-template-columns:1fr}}
     .left{
-      display:none; position:relative; overflow:hidden; padding:48px; color:#fff;
-      background:
-        radial-gradient(1200px 800px at 20% 60%, rgba(255,255,255,.12), transparent 50%),
-        linear-gradient(135deg, var(--panel1), var(--panel2), var(--panel3));
+      position:relative; overflow:hidden; min-height:100vh;
+      background:linear-gradient(135deg,#111827 0%,#334155 55%,#64748b 100%);
+      color:#fff; padding:48px;
     }
-    @media (min-width:1024px){ .left{ display:flex; align-items:center; justify-content:center; } }
+    @media (max-width:1024px){.left{display:none}}
     .gridOverlay{
-      position:absolute; inset:0; opacity:.12; z-index:0;
-      background-image:
-        linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+      position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
       background-size:20px 20px;
     }
     .blob{ position:absolute; border-radius:999px; filter:blur(60px); opacity:.35; z-index:1; }
@@ -202,7 +214,7 @@ function loginPage() {
       <div class="blob b1"></div>
       <div class="blob b2"></div>
       <div class="leftTop">
-        <div class="brand"><div class="logo">🧭</div><div>边缘节点池</div></div>
+        <div class="brand"><div class="logo">🚀</div><div>边缘节点池</div></div>
       </div>
       <div class="stageWrap">
         <div class="stage" id="stage">
@@ -212,13 +224,12 @@ function loginPage() {
           <div class="char yellow" id="c_yellow"><div class="eyesRow yellowEyes" id="yellow_eyes"><div class="pupilOnly" data-owner="yellow" data-max="5"></div><div class="pupilOnly" data-owner="yellow" data-max="5"></div></div><div class="yellowMouth" id="yellow_mouth"></div></div>
         </div>
       </div>
-      
     </section>
     <section class="right">
       <div class="card">
-        <div class="mobileBrand"><div class="logo">🧭</div><div>边缘节点池</div></div>
+        <div class="mobileBrand"><div class="logo">🚀</div><div>边缘节点池</div></div>
         <h1>管理后台登录</h1>
-        <p class="sub">请输入管理密码以继续访问控制台。</p>
+        <p class="sub">请输入管理密码后继续访问控制台。</p>
         <form id="loginForm">
           <div class="field">
             <label for="password">管理密码</label>
@@ -231,7 +242,7 @@ function loginPage() {
           <div id="errorBox" class="err"></div>
         </form>
         <div class="themeWrap"><button id="themeBtn" class="themeBtn" type="button">切换明暗主题</button></div>
-        <div class="footer">当前仅提供管理密码登录，不接入邮箱账户或第三方认证。</div>
+        <div class="footer">当前仅提供管理密码登录，不接入邮箱账号或第三方认证。</div>
       </div>
     </section>
   </div>
@@ -439,72 +450,101 @@ function loginPage() {
 }
 
 // =============================================================================
-// 后台主页
+// 后台首页
 // =============================================================================
-function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0) {
+function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0, runtimeConfig = {}) {
     const domainsJson = JSON.stringify(poolDomains);
+    const configJson = JSON.stringify(runtimeConfig);
     return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Edge Dashboard</title><style>${COMMON_STYLE}</style>${THEME_SCRIPT}</head><body>
     <div class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+        <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
             <div>
-                <h1 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">调度中心</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">${host}</p>
+                <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;">控制面板</h1>
+                <p style="font-size:0.85rem;color:var(--text-muted);font-family:monospace;">${host}</p>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
+            <div style="display:flex;gap:0.75rem;">
                 <button class="btn btn-ghost" onclick="setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')" title="切换主题">🌓</button>
                 <button class="btn btn-ghost" onclick="logout()">退出</button>
             </div>
         </header>
 
-        <section class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">域名池状态</div>
-                <div style="font-size: 1.75rem; font-weight: 800;">${poolDomains.length} <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-muted);">Nodes</span></div>
+        <section class="grid" style="grid-template-columns:repeat(3, 1fr);margin-bottom:2rem;">
+            <div class="card" style="padding:1.25rem;">
+                <div style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;margin-bottom:0.5rem;">域名池数量</div>
+                <div style="font-size:1.75rem;font-weight:800;">${poolDomains.length}</div>
             </div>
-            <div class="card" style="padding: 1.25rem; border-bottom: 3px solid var(--primary);">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">当前索引</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary);"># ${activeIndex}</div>
+            <div class="card" style="padding:1.25rem;border-bottom:3px solid var(--primary);">
+                <div style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;margin-bottom:0.5rem;">当前域名索引</div>
+                <div style="font-size:1.75rem;font-weight:800;color:var(--primary);">${activeIndex}</div>
             </div>
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">可用 IP 数</div>
-                <div style="font-size: 1.75rem; font-weight: 800;">${nodeCount}</div>
+            <div class="card" style="padding:1.25rem;">
+                <div style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;margin-bottom:0.5rem;">可用节点数</div>
+                <div style="font-size:1.75rem;font-weight:800;">${nodeCount}</div>
             </div>
         </section>
 
-        <main class="grid">
+        <main class="grid" style="grid-template-columns:repeat(2, 1fr);">
             <div class="card">
-                <div class="card-header">🔗 订阅分发</div>
+                <div class="card-header">📦 订阅分发</div>
                 <div class="input-group">
                     <label class="input-label">主订阅链接</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="subLink" value="https://${host}/${subpass}" readonly style="font-family: monospace; font-size: 0.85rem;">
+                    <div style="display:flex;gap:0.5rem;">
+                        <input type="text" id="subLink" value="https://${host}/${subpass}" readonly style="font-family:monospace;font-size:0.85rem;">
                         <button class="btn btn-primary" onclick="copyVal('subLink')">复制</button>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label class="input-label">参数注入：ProxyIP（可选）</label>
-                    <input type="text" id="customIP" value="${proxyip}" placeholder="例如：cf.proxy.com" oninput="updateLink()">
+                    <label class="input-label">订阅注入 ProxyIP（可选）</label>
+                    <input type="text" id="customIP" value="${proxyip}" placeholder="例如：proxy.example.com:443" oninput="updateLink()">
                 </div>
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
-                    <label class="input-label">系统环境信息</label>
-                    <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
-                        UUID: ${uuid}<br>
-                        PATH: ${NODE_DEFAULT_PATH}
-                    </div>
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--border);font-size:0.8rem;background:var(--bg-page);padding:0.75rem;border-radius:8px;font-family:monospace;word-break:break-all;">
+                    UUID: ${uuid}<br>
+                    PATH: ${NODE_DEFAULT_PATH}
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">🔁 域名切换池</div>
-                <div id="domainList" style="margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto;"></div>
-                
-                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label class="input-label">手动强制切换索引</label>
-                        <input type="number" id="targetIdx" placeholder="0 - ${poolDomains.length - 1}" min="0">
+                <div id="domainList" style="margin-bottom:1.5rem;max-height:250px;overflow-y:auto;"></div>
+                <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label class="input-label">手动切换到索引</label>
+                        <input type="number" id="targetIdx" placeholder="0 - ${Math.max(poolDomains.length - 1, 0)}" min="0">
                     </div>
-                    <button class="btn btn-primary" onclick="switchDomain()">立即执行</button>
+                    <button class="btn btn-primary" onclick="switchDomain()">立即切换</button>
                 </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">⚙️ ECH 与地区覆盖</div>
+                <div class="input-group">
+                    <label class="input-label" style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" id="echEnabled" style="width:auto;"> 启用 ECH</label>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">自定义 DNS</label>
+                    <input type="text" id="customDns" placeholder="https://dns.joeyblog.eu.org/joeyblog">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">自定义 ECH 域名</label>
+                    <input type="text" id="customEchDomain" placeholder="cloudflare-ech.com">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">默认 Worker 地区</label>
+                    <input type="text" id="defaultWk" placeholder="如 JP / HK / US">
+                </div>
+                <div class="input-group">
+                    <label class="input-label" style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" id="regionMatching" style="width:auto;"> 启用地区匹配</label>
+                </div>
+                <div style="font-size:0.8rem;color:var(--text-muted);background:var(--bg-page);padding:0.75rem;border-radius:8px;margin-bottom:1rem;">
+                    地区从备注解析，推荐写法：<code>1.1.1.1:443#JP Tokyo</code>、<code>1.1.1.1:443#HK 01</code>。无法解析时回退到默认 Worker 地区。
+                </div>
+                <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🧾 当前生效配置预览</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">以下内容为当前页面已生效的运行时配置，保存后会自动刷新。</div>
+                <textarea id="configPreview" readonly style="width:100%;min-height:320px;padding:0.75rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg-page);color:var(--text-main);font-size:0.85rem;font-family:Consolas, monospace;resize:vertical;"></textarea>
             </div>
         </main>
     </div>
@@ -515,6 +555,16 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
     const domains = ${domainsJson};
     const activeIdx = ${activeIndex};
     const subPass = "${subpass}";
+    const runtimeConfig = ${configJson};
+
+    function initConfig() {
+        document.getElementById('echEnabled').checked = !!runtimeConfig.echEnabled;
+        document.getElementById('customDns').value = runtimeConfig.customDns || '';
+        document.getElementById('customEchDomain').value = runtimeConfig.customEchDomain || '';
+        document.getElementById('defaultWk').value = runtimeConfig.defaultWk || '';
+        document.getElementById('regionMatching').checked = runtimeConfig.regionMatching !== false;
+        renderConfigPreview();
+    }
 
     function renderDomains() {
         const list = document.getElementById('domainList');
@@ -523,19 +573,40 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
             const badgeClass = i === activeIdx ? 'badge-success' : 'badge-muted';
             const badgeText = i === activeIdx ? 'ACTIVE' : 'STANDBY';
             return '<div class="list-item ' + activeClass + '">' +
-                '<div style="display: flex; flex-direction: column;">' +
-                    '<span style="font-size: 0.9rem; font-weight: 600;">' + d + '</span>' +
-                    '<span style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Index: ' + i + '</span>' +
+                '<div style="display:flex;flex-direction:column;">' +
+                    '<span style="font-size:0.9rem;font-weight:600;">' + d + '</span>' +
+                    '<span style="font-size:0.7rem;color:var(--text-muted);font-family:monospace;">Index: ' + i + '</span>' +
                 '</div>' +
                 '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
             '</div>';
         }).join('');
     }
 
+    function buildConfigPreview() {
+        return {
+            host: window.location.hostname,
+            subscriptionPath: '/' + subPass,
+            injectedProxyIp: document.getElementById('customIP').value.trim(),
+            echEnabled: document.getElementById('echEnabled').checked,
+            customDns: document.getElementById('customDns').value.trim() || 'https://dns.joeyblog.eu.org/joeyblog',
+            customEchDomain: document.getElementById('customEchDomain').value.trim() || 'cloudflare-ech.com',
+            defaultWk: document.getElementById('defaultWk').value.trim().toUpperCase(),
+            regionMatching: document.getElementById('regionMatching').checked,
+            activeDomainIndex: activeIdx,
+            activeDomain: domains[activeIdx] || '',
+            domainPoolSize: domains.length
+        };
+    }
+
+    function renderConfigPreview() {
+        document.getElementById('configPreview').value = JSON.stringify(buildConfigPreview(), null, 2);
+    }
+
     function updateLink() {
         const ip = document.getElementById('customIP').value.trim();
         const base = "https://" + window.location.hostname + "/" + subPass;
-        document.getElementById('subLink').value = ip ? base + "?proxyip=" + ip : base;
+        document.getElementById('subLink').value = ip ? base + "?proxyip=" + encodeURIComponent(ip) : base;
+        renderConfigPreview();
     }
 
     function showToast(msg) {
@@ -549,7 +620,7 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         const el = document.getElementById(id);
         el.select();
         document.execCommand('copy');
-        showToast("已成功复制到剪贴板");
+        showToast("已复制到剪贴板");
     }
 
     async function switchDomain() {
@@ -567,14 +638,106 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         location.reload();
     }
 
+    async function saveConfig() {
+        const payload = {
+            echEnabled: document.getElementById('echEnabled').checked,
+            customDns: document.getElementById('customDns').value.trim(),
+            customEchDomain: document.getElementById('customEchDomain').value.trim(),
+            defaultWk: document.getElementById('defaultWk').value.trim().toUpperCase(),
+            regionMatching: document.getElementById('regionMatching').checked
+        };
+        const res = await fetch('/admin/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+            showToast("配置已保存");
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showToast("保存失败");
+        }
+    }
+
+    ['customIP', 'customDns', 'customEchDomain', 'defaultWk'].forEach(id => {
+        document.addEventListener('input', (event) => {
+            if (event.target && event.target.id === id) renderConfigPreview();
+        });
+    });
+    ['echEnabled', 'regionMatching'].forEach(id => {
+        document.addEventListener('change', (event) => {
+            if (event.target && event.target.id === id) renderConfigPreview();
+        });
+    });
+
     renderDomains();
+    initConfig();
     </script></body></html>`;
 }
 
 // =============================================================================
-// 核心业务逻辑（保留并微调）
+// 核心业务逻辑
 // =============================================================================
 function getEnv(env, key, fallback) { return env[key] || fallback; }
+
+async function getStateConfig(env) {
+    if (!env.POOL_STATE) return {};
+    try {
+        const raw = await env.POOL_STATE.get(CONFIG_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+async function setStateConfig(env, config) {
+    if (!env.POOL_STATE) return false;
+    await env.POOL_STATE.put(CONFIG_KEY, JSON.stringify(config));
+    return true;
+}
+
+function normalizeRegionCode(input = '') {
+    const upper = String(input).trim().toUpperCase();
+    if (!upper) return '';
+    for (const [code, aliases] of Object.entries(REGION_ALIAS_MAP)) {
+        if (aliases.includes(upper)) return code;
+    }
+    return '';
+}
+
+function detectRegionFromRemark(remark = '') {
+    const upper = String(remark).trim().toUpperCase();
+    if (!upper) return '';
+    const codeMatch = upper.match(/\b(US|SG|JP|HK|KR|DE|SE|NL|FI|GB|UK)\b/);
+    if (codeMatch) return normalizeRegionCode(codeMatch[1]);
+    for (const [code, aliases] of Object.entries(REGION_ALIAS_MAP)) {
+        if (aliases.some(alias => upper.includes(alias))) return code;
+    }
+    return '';
+}
+
+function parseBoolean(value, defaultValue = false) {
+    if (value === undefined || value === null || value === '') return defaultValue;
+    return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
+function getRuntimeConfig(env, stateConfig = {}) {
+    return {
+        echEnabled: parseBoolean(stateConfig.echEnabled ?? getEnv(env, 'ECH', ECH), false),
+        customDns: stateConfig.customDns || getEnv(env, 'CUSTOM_DNS', CUSTOM_DNS),
+        customEchDomain: stateConfig.customEchDomain || getEnv(env, 'CUSTOM_ECH_DOMAIN', CUSTOM_ECH_DOMAIN),
+        defaultWk: normalizeRegionCode(stateConfig.defaultWk || getEnv(env, 'DEFAULT_WK', DEFAULT_WK)),
+        regionMatching: !String(stateConfig.regionMatching ?? getEnv(env, 'REGION_MATCHING', REGION_MATCHING)).trim().toLowerCase().includes('no')
+    };
+}
+
+function buildNodePath(proxyip, wk) {
+    const params = new URLSearchParams();
+    if (proxyip) params.set('proxyip', proxyip);
+    if (wk) params.set('wk', wk);
+    const query = params.toString();
+    return query ? `${NODE_DEFAULT_PATH}?${query}` : NODE_DEFAULT_PATH;
+}
 
 async function getCustomIPs(env) {
     let ips = getEnv(env, 'ADD', "");
@@ -603,19 +766,37 @@ async function getCustomIPs(env) {
     return ips;
 }
 
-function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "") {
+function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "", runtimeConfig = {}) {
     const lines = ipsText.split('\n').filter(l => l.trim());
-    const finalPath = (p && p.trim() !== defaultIP) ? `${NODE_DEFAULT_PATH}?proxyip=${p.trim()}` : NODE_DEFAULT_PATH;
+    const proxyParam = (p && p.trim() !== defaultIP) ? p.trim() : '';
     
     return lines.map(line => {
         const [addr, name] = line.split('#');
         if (!addr) return null;
-        let [ip, port] = addr.trim().split(':');
+        const addrParts = addr.trim().split(':');
+        let port = addrParts.pop();
+        let ip = addrParts.join(':');
         if (!port) port = "443";
+        const wk = runtimeConfig.regionMatching ? (detectRegionFromRemark(name || '') || runtimeConfig.defaultWk || '') : (runtimeConfig.defaultWk || '');
+        const finalPath = buildNodePath(proxyParam, wk);
         
         return hosts.map((h, i) => {
             const nName = `${name || 'Edge'}${hosts.length > 1 ? '-N'+(i+1) : ''} ${ps}`.trim();
-            return `${PT_TYPE}://${u}@${ip}:${port}?encryption=none&security=tls&sni=${h}&alpn=h3&fp=random&allowInsecure=1&type=ws&host=${h}&path=${encodeURIComponent(finalPath)}#${encodeURIComponent(nName)}`;
+            const params = new URLSearchParams({
+                encryption: 'none',
+                security: 'tls',
+                sni: h,
+                alpn: runtimeConfig.echEnabled ? 'h3,h2,http/1.1' : 'h3',
+                fp: runtimeConfig.echEnabled ? 'chrome' : 'random',
+                allowInsecure: '1',
+                type: 'ws',
+                host: h,
+                path: finalPath
+            });
+            if (runtimeConfig.echEnabled) {
+                params.set('ech', `${runtimeConfig.customEchDomain || CUSTOM_ECH_DOMAIN}+${runtimeConfig.customDns || CUSTOM_DNS}`);
+            }
+            return `${PT_TYPE}://${u}@${ip}:${port}?${params.toString()}#${encodeURIComponent(nName)}`;
         }).join('\n');
     }).filter(Boolean).join('\n');
 }
@@ -625,6 +806,8 @@ export default {
         try {
             const url = new URL(request.url);
             const host = url.hostname;
+            const stateConfig = await getStateConfig(env);
+            const runtimeConfig = getRuntimeConfig(env, stateConfig);
             const _UUID = getEnv(env, 'UUID', UUID);
             const _WEB_PW = getEnv(env, 'WEB_PASSWORD', WEB_PASSWORD);
             const _SUB_PW = getEnv(env, 'SUB_PASSWORD', SUB_PASSWORD);
@@ -643,7 +826,7 @@ export default {
                 }
                 const activeDomain = _POOL_DOMAINS[idx % _POOL_DOMAINS.length];
                 const allIPs = await getCustomIPs(env);
-                const nodes = genNodes([activeDomain], _UUID, url.searchParams.get('proxyip') || _PROXY_IP, allIPs, _PS, _PROXY_IP);
+                const nodes = genNodes([activeDomain], _UUID, url.searchParams.get('proxyip') || _PROXY_IP, allIPs, _PS, _PROXY_IP, runtimeConfig);
                 return new Response(btoa(unescape(encodeURIComponent(nodes))), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
             }
 
@@ -662,6 +845,19 @@ export default {
                     }
                 }
 
+                if (url.pathname === '/admin/config' && request.method === 'POST') {
+                    const payload = await request.json();
+                    const nextConfig = {
+                        echEnabled: !!payload.echEnabled,
+                        customDns: String(payload.customDns || '').trim() || CUSTOM_DNS,
+                        customEchDomain: String(payload.customEchDomain || '').trim() || CUSTOM_ECH_DOMAIN,
+                        defaultWk: normalizeRegionCode(payload.defaultWk || ''),
+                        regionMatching: payload.regionMatching !== false
+                    };
+                    const saved = await setStateConfig(env, nextConfig);
+                    return new Response(JSON.stringify({ ok: saved, config: nextConfig }), { headers: { 'Content-Type': 'application/json' } });
+                }
+
                 let idx = 0;
                 if (env.POOL_STATE) {
                     const stored = await env.POOL_STATE.get('domain_index');
@@ -669,7 +865,7 @@ export default {
                 }
                 const allIPs = await getCustomIPs(env);
                 const count = allIPs.split('\n').filter(l => l.trim()).length;
-                return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count), { headers: { 'Content-Type': 'text/html' } });
+                return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count, runtimeConfig), { headers: { 'Content-Type': 'text/html' } });
             }
 
             if (url.pathname === '/') return Response.redirect(getEnv(env, 'ROOT_REDIRECT_URL', ROOT_REDIRECT_URL), 302);
@@ -677,6 +873,15 @@ export default {
         } catch (e) { return new Response(e.stack, { status: 500 }); }
     }
 };
+
+
+
+
+
+
+
+
+
 
 
 
