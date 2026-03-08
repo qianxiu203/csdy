@@ -10,7 +10,7 @@ const ROOT_REDIRECT_URL = "https://cn.bing.com";
 
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
 const DEFAULT_ECH_ENABLED = 'no';
-const DEFAULT_ECH_DOH = 'https://dns.joeyblog.eu.org/joeyblog';
+const DEFAULT_ECH_DOH = '';
 const DEFAULT_ECH_QUERY_SERVER_NAME = 'cloudflare-ech.com';
 
 // =============================================================================
@@ -685,6 +685,16 @@ function normalizeYesNo(value, fallback = 'no') {
     return fallback;
 }
 
+async function clearOverriddenEchKv(env, state = {}) {
+    if (!env.POOL_STATE) return;
+
+    const tasks = [];
+    if (state.hasEnvEnabled && state.kvEnabled !== null) tasks.push(env.POOL_STATE.delete('ech_enabled'));
+    if (state.hasEnvDoh && state.kvDoh !== null) tasks.push(env.POOL_STATE.delete('ech_doh'));
+    if (state.hasEnvQueryServerName && state.kvQueryServerName !== null) tasks.push(env.POOL_STATE.delete('ech_query_server_name'));
+    if (tasks.length) await Promise.all(tasks);
+}
+
 async function readEchConfig(env) {
     const rawEnvEnabled = env.ECH;
     const rawEnvDoh = env.ECH_DOH;
@@ -702,9 +712,12 @@ async function readEchConfig(env) {
     let doh = DEFAULT_ECH_DOH;
     let queryServerName = DEFAULT_ECH_QUERY_SERVER_NAME;
     let source = 'default';
+    let kvEnabled = null;
+    let kvDoh = null;
+    let kvQueryServerName = null;
 
     if (env.POOL_STATE) {
-        const [kvEnabled, kvDoh, kvQueryServerName] = await Promise.all([
+        [kvEnabled, kvDoh, kvQueryServerName] = await Promise.all([
             env.POOL_STATE.get('ech_enabled'),
             env.POOL_STATE.get('ech_doh'),
             env.POOL_STATE.get('ech_query_server_name')
@@ -731,17 +744,21 @@ async function readEchConfig(env) {
         source = 'environment';
     }
 
+    await clearOverriddenEchKv(env, {
+        hasEnvEnabled,
+        hasEnvDoh,
+        hasEnvQueryServerName,
+        kvEnabled,
+        kvDoh,
+        kvQueryServerName
+    });
+
     return {
         enabled: enabled === 'yes',
         doh,
         queryServerName,
         source,
-        kvBound: !!env.POOL_STATE,
-        envEnabled: hasEnvEnabled ? envEnabled === 'yes' : null,
-        envDoh: envDoh || '-',
-        envQueryServerName: envQueryServerName || '-',
-        defaultDoh: DEFAULT_ECH_DOH,
-        defaultQueryServerName: DEFAULT_ECH_QUERY_SERVER_NAME
+        kvBound: !!env.POOL_STATE
     };
 }
 
