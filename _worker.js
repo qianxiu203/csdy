@@ -9,6 +9,9 @@ const NODE_DEFAULT_PATH = "/api/v1";
 const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
 
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
+const DEFAULT_ECH_ENABLED = 'no';
+const DEFAULT_ECH_DOH = 'https://dns.joeyblog.eu.org/joeyblog';
+const DEFAULT_ECH_QUERY_SERVER_NAME = 'cloudflare-ech.com';
 
 // =============================================================================
 // UI 样式系统（现代工业风）
@@ -441,9 +444,9 @@ function loginPage() {
 // =============================================================================
 // 后台主页
 // =============================================================================
-function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0, regionCodes = []) {
+function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0, echConfig = {}, hasPoolState = false) {
     const domainsJson = JSON.stringify(poolDomains);
-    const regionText = regionCodes.length ? regionCodes.join(', ') : '未配置';
+    const echConfigJson = JSON.stringify(echConfig);
     return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Edge Dashboard</title><style>${COMMON_STYLE}</style>${THEME_SCRIPT}</head><body>
     <div class="container">
         <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
@@ -486,29 +489,58 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     <label class="input-label">参数注入：ProxyIP（可选）</label>
                     <input type="text" id="customIP" value="${proxyip}" placeholder="例如：cf.proxy.com" oninput="updateLink()">
                 </div>
+                <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border);">
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">ECH 当前状态</div>
+                    <div id="subEchStatus" style="font-size: 0.95rem; font-weight: 700;">读取中...</div>
+                    <div id="subEchDesc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.6;"></div>
+                </div>
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
                     <label class="input-label">系统环境信息</label>
                     <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
                         UUID: ${uuid}<br>
-                        PATH: ${NODE_DEFAULT_PATH}<br>
-                        REGIONS: ${regionText}
+                        PATH: ${NODE_DEFAULT_PATH}
                     </div>
-                </div>
-                <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.7;">
-                    已支持地区节点输出。配置 ADD_HK、ADD_JP、ADD_SG、ADD_US 等环境变量后，订阅会自动生成带 wk 参数的地区节点；若订阅链接显式传入 proxyip，则继续走固定 ProxyIP，不附带地区参数。
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">🔁 域名切换池</div>
                 <div id="domainList" style="margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto;"></div>
-                
                 <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                     <div style="flex: 1;">
                         <label class="input-label">手动强制切换索引</label>
                         <input type="number" id="targetIdx" placeholder="0 - ${poolDomains.length - 1}" min="0">
                     </div>
                     <button class="btn btn-primary" onclick="switchDomain()">立即执行</button>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">🔐 ECH 配置</div>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <button id="echEnableBtn" class="btn btn-primary" type="button" onclick="setEchEnabled(true)">启用 ECH</button>
+                    <button id="echDisableBtn" class="btn btn-ghost" type="button" onclick="setEchEnabled(false)">关闭 ECH</button>
+                    <span id="echBadge" class="badge badge-muted" style="align-self: center;">未加载</span>
+                </div>
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="input-group">
+                        <label class="input-label">DoH 地址</label>
+                        <input type="text" id="echDoh" placeholder="https://dns.example.com/dns-query">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">ECH 域名</label>
+                        <input type="text" id="echQueryServerName" placeholder="cloudflare-ech.com">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem;">
+                    <button class="btn btn-primary" type="button" onclick="saveEchConfig()">保存 ECH 配置</button>
+                    <span id="echSaveHint" style="font-size: 0.82rem; color: var(--text-muted);">${hasPoolState ? '保存到 POOL_STATE KV 后立即对新订阅生效。' : '未绑定 POOL_STATE，当前仅展示默认/环境变量配置。'}</span>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border); font-family: monospace; font-size: 0.82rem; line-height: 1.7; word-break: break-all;">
+                    <div>状态：<span id="echStatusText">读取中...</span></div>
+                    <div>DoH：<span id="echStatusDoh">-</span></div>
+                    <div>ECH 域名：<span id="echStatusQueryName">-</span></div>
+                    <div>配置来源：<span id="echStatusSource">-</span></div>
                 </div>
             </div>
         </main>
@@ -520,6 +552,8 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
     const domains = ${domainsJson};
     const activeIdx = ${activeIndex};
     const subPass = "${subpass}";
+    const initialEchConfig = ${echConfigJson};
+    let echState = Object.assign({}, initialEchConfig);
 
     function renderDomains() {
         const list = document.getElementById('domainList');
@@ -541,6 +575,70 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         const ip = document.getElementById('customIP').value.trim();
         const base = "https://" + window.location.hostname + "/" + subPass;
         document.getElementById('subLink').value = ip ? base + "?proxyip=" + ip : base;
+    }
+
+    function renderEchCard() {
+        const enabled = echState && echState.enabled;
+        const badge = document.getElementById('echBadge');
+        const enableBtn = document.getElementById('echEnableBtn');
+        const disableBtn = document.getElementById('echDisableBtn');
+        const statusText = enabled ? '已启用' : '未启用';
+        const statusColor = enabled ? 'var(--success)' : 'var(--text-muted)';
+        badge.textContent = statusText;
+        badge.className = 'badge ' + (enabled ? 'badge-success' : 'badge-muted');
+        enableBtn.className = 'btn ' + (enabled ? 'btn-primary' : 'btn-ghost');
+        disableBtn.className = 'btn ' + (!enabled ? 'btn-primary' : 'btn-ghost');
+        document.getElementById('echDoh').value = echState.doh || '';
+        document.getElementById('echQueryServerName').value = echState.queryServerName || '';
+        document.getElementById('echStatusText').textContent = statusText;
+        document.getElementById('echStatusText').style.color = statusColor;
+        document.getElementById('echStatusDoh').textContent = echState.doh || '-';
+        document.getElementById('echStatusQueryName').textContent = echState.queryServerName || '-';
+        document.getElementById('echStatusSource').textContent = echState.source || '-';
+        document.getElementById('subEchStatus').textContent = enabled ? 'ECH 已启用' : 'ECH 未启用';
+        document.getElementById('subEchStatus').style.color = statusColor;
+        document.getElementById('subEchDesc').textContent = enabled
+            ? '生成的节点 URI 会附带 ech、alpn 和 fp=chrome，由客户端通过 DoH 动态获取 ECHConfig。'
+            : '当前订阅保持普通 TLS 输出，不追加 ech 参数。';
+    }
+
+    function setEchEnabled(enabled) {
+        echState.enabled = !!enabled;
+        renderEchCard();
+    }
+
+    async function loadEchConfig() {
+        try {
+            const res = await fetch('/admin/config', { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error('读取配置失败');
+            echState = await res.json();
+        } catch (e) {
+            showToast('ECH 配置读取失败，已展示当前默认值');
+        }
+        renderEchCard();
+    }
+
+    async function saveEchConfig() {
+        echState.doh = document.getElementById('echDoh').value.trim();
+        echState.queryServerName = document.getElementById('echQueryServerName').value.trim();
+        try {
+            const res = await fetch('/admin/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ech_enabled: echState.enabled ? 'yes' : 'no',
+                    ech_doh: echState.doh,
+                    ech_query_server_name: echState.queryServerName
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || '保存失败');
+            echState = data;
+            renderEchCard();
+            showToast('ECH 配置已保存并生效');
+        } catch (e) {
+            showToast(e.message || 'ECH 配置保存失败');
+        }
     }
 
     function showToast(msg) {
@@ -573,6 +671,9 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
     }
 
     renderDomains();
+    updateLink();
+    renderEchCard();
+    loadEchConfig();
     </script></body></html>`;
 }
 
@@ -581,44 +682,66 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
 // =============================================================================
 function getEnv(env, key, fallback) { return env[key] || fallback; }
 
-function normalizeRegionCode(value) {
-    return (value || '').trim().toUpperCase();
+function normalizeYesNo(value, fallback = 'no') {
+    if (typeof value === 'boolean') return value ? 'yes' : 'no';
+    if (value === undefined || value === null) return fallback;
+    const normalized = String(value).trim().toLowerCase();
+    if (['yes', 'true', '1', 'on'].includes(normalized)) return 'yes';
+    if (['no', 'false', '0', 'off'].includes(normalized)) return 'no';
+    return fallback;
 }
 
-function splitConfigEntries(raw) {
-    return String(raw || '')
-        .split(/[\n,]/)
-        .map(item => item.trim())
-        .filter(Boolean);
-}
+async function readEchConfig(env) {
+    const envEnabled = normalizeYesNo(getEnv(env, 'ECH', DEFAULT_ECH_ENABLED), DEFAULT_ECH_ENABLED);
+    const envDoh = String(getEnv(env, 'ECH_DOH', DEFAULT_ECH_DOH) || DEFAULT_ECH_DOH).trim() || DEFAULT_ECH_DOH;
+    const envQueryServerName = String(getEnv(env, 'ECH_QUERY_SERVER_NAME', DEFAULT_ECH_QUERY_SERVER_NAME) || DEFAULT_ECH_QUERY_SERVER_NAME).trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
 
-function parseRegionMapConfig(raw) {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-        const result = {};
-        for (const [region, value] of Object.entries(parsed)) {
-            const regionCode = normalizeRegionCode(region);
-            if (!regionCode) continue;
-            const entries = Array.isArray(value) ? value.map(item => String(item).trim()).filter(Boolean) : splitConfigEntries(value);
-            if (entries.length) result[regionCode] = entries;
+    let enabled = envEnabled;
+    let doh = envDoh;
+    let queryServerName = envQueryServerName;
+    let source = 'environment';
+
+    if (env.POOL_STATE) {
+        const [kvEnabled, kvDoh, kvQueryServerName] = await Promise.all([
+            env.POOL_STATE.get('ech_enabled'),
+            env.POOL_STATE.get('ech_doh'),
+            env.POOL_STATE.get('ech_query_server_name')
+        ]);
+
+        if (kvEnabled !== null || kvDoh !== null || kvQueryServerName !== null) {
+            enabled = normalizeYesNo(kvEnabled, envEnabled);
+            doh = String(kvDoh || envDoh || DEFAULT_ECH_DOH).trim() || DEFAULT_ECH_DOH;
+            queryServerName = String(kvQueryServerName || envQueryServerName || DEFAULT_ECH_QUERY_SERVER_NAME).trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+            source = 'kv';
         }
-        return result;
-    } catch {
-        return {};
     }
+
+    return {
+        enabled: enabled === 'yes',
+        doh,
+        queryServerName,
+        source,
+        kvBound: !!env.POOL_STATE
+    };
 }
 
-function getRegionNodeSources(env) {
-    const regionMap = parseRegionMapConfig(getEnv(env, 'REGION_MAP', ''));
-    for (const [key, value] of Object.entries(env || {})) {
-        if (!/^ADD_[A-Z0-9]+$/i.test(key)) continue;
-        const regionCode = normalizeRegionCode(key.slice(4));
-        const entries = splitConfigEntries(value);
-        if (regionCode && entries.length) regionMap[regionCode] = entries;
+async function saveEchConfig(env, payload = {}) {
+    if (!env.POOL_STATE) {
+        throw new Error('POOL_STATE 未绑定，无法保存 ECH 配置');
     }
-    return regionMap;
+
+    const currentConfig = await readEchConfig(env);
+    const enabled = normalizeYesNo(payload.ech_enabled, currentConfig.enabled ? 'yes' : 'no');
+    const doh = String(payload.ech_doh || '').trim() || DEFAULT_ECH_DOH;
+    const queryServerName = String(payload.ech_query_server_name || '').trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+
+    await Promise.all([
+        env.POOL_STATE.put('ech_enabled', enabled),
+        env.POOL_STATE.put('ech_doh', doh),
+        env.POOL_STATE.put('ech_query_server_name', queryServerName)
+    ]);
+
+    return readEchConfig(env);
 }
 
 async function getCustomIPs(env) {
@@ -648,7 +771,7 @@ async function getCustomIPs(env) {
     return ips;
 }
 
-function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "") {
+function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "", echConfig = { enabled: false, doh: DEFAULT_ECH_DOH, queryServerName: DEFAULT_ECH_QUERY_SERVER_NAME }) {
     const lines = ipsText.split('\n').filter(l => l.trim());
     const finalPath = (p && p.trim() !== defaultIP) ? `${NODE_DEFAULT_PATH}?proxyip=${p.trim()}` : NODE_DEFAULT_PATH;
     
@@ -660,35 +783,25 @@ function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "") {
         
         return hosts.map((h, i) => {
             const nName = `${name || 'Edge'}${hosts.length > 1 ? '-N'+(i+1) : ''} ${ps}`.trim();
-            return `${PT_TYPE}://${u}@${ip}:${port}?encryption=none&security=tls&sni=${h}&alpn=h3&fp=random&allowInsecure=1&type=ws&host=${h}&path=${encodeURIComponent(finalPath)}#${encodeURIComponent(nName)}`;
+            const params = new URLSearchParams({
+                encryption: 'none',
+                security: 'tls',
+                sni: h,
+                fp: echConfig.enabled ? 'chrome' : 'random',
+                allowInsecure: '1',
+                type: 'ws',
+                host: h,
+                path: finalPath
+            });
+            if (echConfig.enabled) {
+                params.set('alpn', 'h3,h2,http/1.1');
+                params.set('ech', `${echConfig.queryServerName}+${echConfig.doh}`);
+            } else {
+                params.set('alpn', 'h3');
+            }
+            return `${PT_TYPE}://${u}@${ip}:${port}?${params.toString()}#${encodeURIComponent(nName)}`;
         }).join('\n');
     }).filter(Boolean).join('\n');
-}
-
-function genRegionNodes(hosts, u, regionMap, ps = "") {
-    const regionEntries = Object.entries(regionMap || {}).filter(([, lines]) => Array.isArray(lines) && lines.length);
-    return regionEntries.flatMap(([regionCode, lines]) => {
-        const finalPath = `${NODE_DEFAULT_PATH}?wk=${encodeURIComponent(regionCode)}`;
-        return lines.flatMap(line => {
-            const [addr, rawName] = String(line).split('#');
-            if (!addr || !addr.trim()) return [];
-            const separatorIndex = addr.trim().lastIndexOf(':');
-            let ip = addr.trim();
-            let port = '443';
-            if (separatorIndex > -1 && !addr.trim().endsWith(']')) {
-                const maybePort = addr.trim().slice(separatorIndex + 1);
-                if (/^\d+$/.test(maybePort)) {
-                    ip = addr.trim().slice(0, separatorIndex);
-                    port = maybePort;
-                }
-            }
-            return hosts.map((h, i) => {
-                const baseName = rawName ? rawName.trim() : 'Edge';
-                const nodeName = `${baseName} ${regionCode}${hosts.length > 1 ? '-N' + (i + 1) : ''} ${ps}`.trim();
-                return `${PT_TYPE}://${u}@${ip}:${port}?encryption=none&security=tls&sni=${h}&alpn=h3&fp=random&allowInsecure=1&type=ws&host=${h}&path=${encodeURIComponent(finalPath)}#${encodeURIComponent(nodeName)}`;
-            });
-        });
-    }).join('\n');
 }
 
 export default {
@@ -703,8 +816,7 @@ export default {
             const _PROXY_IP = _PROXY_IP_RAW ? _PROXY_IP_RAW.split(/[\n,]/)[0].trim() : "";
             const _PS = getEnv(env, 'PS', "");
             const _POOL_DOMAINS = getEnv(env, 'POOL_DOMAINS', host).split(',').map(d => d.trim()).filter(Boolean);
-            const _REGION_SOURCES = getRegionNodeSources(env);
-            const _REGION_CODES = Object.keys(_REGION_SOURCES).sort();
+            const echConfig = await readEchConfig(env);
 
             // 1. 订阅分发（KV 轮换）
             if ((_SUB_PW && url.pathname === `/${_SUB_PW}`) || (url.pathname === '/sub' && url.searchParams.get('uuid') === _UUID)) {
@@ -715,11 +827,8 @@ export default {
                     await env.POOL_STATE.put('domain_index', String((idx + 1) % _POOL_DOMAINS.length));
                 }
                 const activeDomain = _POOL_DOMAINS[idx % _POOL_DOMAINS.length];
-                const explicitProxyIP = url.searchParams.get('proxyip') || _PROXY_IP;
                 const allIPs = await getCustomIPs(env);
-                const nodes = url.searchParams.get('proxyip')
-                    ? genNodes([activeDomain], _UUID, explicitProxyIP, allIPs, _PS, _PROXY_IP)
-                    : (_REGION_CODES.length ? genRegionNodes([activeDomain], _UUID, _REGION_SOURCES, _PS) : genNodes([activeDomain], _UUID, explicitProxyIP, allIPs, _PS, _PROXY_IP));
+                const nodes = genNodes([activeDomain], _UUID, url.searchParams.get('proxyip') || _PROXY_IP, allIPs, _PS, _PROXY_IP, echConfig);
                 return new Response(btoa(unescape(encodeURIComponent(nodes))), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
             }
 
@@ -738,6 +847,23 @@ export default {
                     }
                 }
 
+                if (url.pathname === '/admin/config' && request.method === 'GET') {
+                    return new Response(JSON.stringify(echConfig), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+                }
+
+                if (url.pathname === '/admin/config' && request.method === 'POST') {
+                    try {
+                        const payload = await request.json();
+                        const savedConfig = await saveEchConfig(env, payload);
+                        return new Response(JSON.stringify(savedConfig), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+                    } catch (error) {
+                        return new Response(JSON.stringify({ error: error.message || '保存失败' }), {
+                            status: 400,
+                            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+                        });
+                    }
+                }
+
                 let idx = 0;
                 if (env.POOL_STATE) {
                     const stored = await env.POOL_STATE.get('domain_index');
@@ -745,7 +871,7 @@ export default {
                 }
                 const allIPs = await getCustomIPs(env);
                 const count = allIPs.split('\n').filter(l => l.trim()).length;
-                return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count, _REGION_CODES), { headers: { 'Content-Type': 'text/html' } });
+                return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count, echConfig, !!env.POOL_STATE), { headers: { 'Content-Type': 'text/html' } });
             }
 
             if (url.pathname === '/') return Response.redirect(getEnv(env, 'ROOT_REDIRECT_URL', ROOT_REDIRECT_URL), 302);
@@ -753,5 +879,3 @@ export default {
         } catch (e) { return new Response(e.stack, { status: 500 }); }
     }
 };
-
-
