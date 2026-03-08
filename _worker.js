@@ -238,8 +238,10 @@ function loginPage() {
   <script>
     const state = {
       isTyping: false,
+      isPasswordFocused: false,
       showPassword: false,
       passwordLength: 0,
+      hasError: false,
       isPurpleBlinking: false,
       isBlackBlinking: false,
       isLookingAtEachOther: false,
@@ -329,27 +331,35 @@ function loginPage() {
       const blackPos = calcFace(black);
       const orangePos = calcFace(orange);
       const yellowPos = calcFace(yellow);
-      const isHidingPassword = state.passwordLength > 0 && !state.showPassword;
-      purple.style.height = ((state.isTyping || isHidingPassword) ? 440 : 400) + 'px';
-      if (state.passwordLength > 0 && state.showPassword) purple.style.transform = 'skewX(0deg)';
-      else if (state.isTyping || isHidingPassword) purple.style.transform = 'skewX(' + ((purplePos.bodySkew || 0) - 12) + 'deg) translateX(40px)';
+      const isProtectedPassword = state.isPasswordFocused && !state.showPassword;
+      const isErrorState = state.hasError;
+
+      purple.style.height = ((state.isTyping || isErrorState) ? 428 : 400) + 'px';
+      if (isErrorState) purple.style.transform = 'skewX(-8deg) translateX(18px)';
+      else if (state.passwordLength > 0 && state.showPassword) purple.style.transform = 'skewX(0deg)';
+      else if (isProtectedPassword) purple.style.transform = 'skewX(-2deg) translateX(6px) translateY(2px)';
+      else if (state.isTyping) purple.style.transform = 'skewX(' + ((purplePos.bodySkew || 0) - 12) + 'deg) translateX(40px)';
       else purple.style.transform = 'skewX(' + (purplePos.bodySkew || 0) + 'deg)';
-      purpleEyes.style.left = ((state.passwordLength > 0 && state.showPassword) ? 20 : state.isLookingAtEachOther ? 55 : (45 + purplePos.faceX)) + 'px';
-      purpleEyes.style.top = ((state.passwordLength > 0 && state.showPassword) ? 35 : state.isLookingAtEachOther ? 65 : (40 + purplePos.faceY)) + 'px';
-      if (state.passwordLength > 0 && state.showPassword) black.style.transform = 'skewX(0deg)';
+      purpleEyes.style.left = (isErrorState ? 52 : (state.passwordLength > 0 && state.showPassword) ? 20 : isProtectedPassword ? 34 : state.isLookingAtEachOther ? 55 : (45 + purplePos.faceX)) + 'px';
+      purpleEyes.style.top = (isErrorState ? 54 : (state.passwordLength > 0 && state.showPassword) ? 35 : isProtectedPassword ? 30 : state.isLookingAtEachOther ? 65 : (40 + purplePos.faceY)) + 'px';
+
+      if (isErrorState) black.style.transform = 'skewX(6deg) translateX(10px)';
+      else if (state.passwordLength > 0 && state.showPassword) black.style.transform = 'skewX(0deg)';
+      else if (isProtectedPassword) black.style.transform = 'skewX(2deg) translateX(-4px)';
       else if (state.isLookingAtEachOther) black.style.transform = 'skewX(' + (((blackPos.bodySkew || 0) * 1.5) + 10) + 'deg) translateX(20px)';
-      else if (state.isTyping || isHidingPassword) black.style.transform = 'skewX(' + ((blackPos.bodySkew || 0) * 1.5) + 'deg)';
+      else if (state.isTyping) black.style.transform = 'skewX(' + ((blackPos.bodySkew || 0) * 1.5) + 'deg)';
       else black.style.transform = 'skewX(' + (blackPos.bodySkew || 0) + 'deg)';
-      blackEyes.style.left = ((state.passwordLength > 0 && state.showPassword) ? 10 : state.isLookingAtEachOther ? 32 : (26 + blackPos.faceX)) + 'px';
-      blackEyes.style.top = ((state.passwordLength > 0 && state.showPassword) ? 28 : state.isLookingAtEachOther ? 12 : (32 + blackPos.faceY)) + 'px';
-      orange.style.transform = (state.passwordLength > 0 && state.showPassword) ? 'skewX(0deg)' : 'skewX(' + (orangePos.bodySkew || 0) + 'deg)';
-      yellow.style.transform = (state.passwordLength > 0 && state.showPassword) ? 'skewX(0deg)' : 'skewX(' + (yellowPos.bodySkew || 0) + 'deg)';
-      orangeEyes.style.left = ((state.passwordLength > 0 && state.showPassword) ? 50 : (82 + orangePos.faceX)) + 'px';
-      orangeEyes.style.top = ((state.passwordLength > 0 && state.showPassword) ? 85 : (90 + orangePos.faceY)) + 'px';
-      yellowEyes.style.left = ((state.passwordLength > 0 && state.showPassword) ? 20 : (52 + yellowPos.faceX)) + 'px';
-      yellowEyes.style.top = ((state.passwordLength > 0 && state.showPassword) ? 35 : (40 + yellowPos.faceY)) + 'px';
-      yellowMouth.style.left = ((state.passwordLength > 0 && state.showPassword) ? 10 : (40 + yellowPos.faceX)) + 'px';
-      yellowMouth.style.top = ((state.passwordLength > 0 && state.showPassword) ? 88 : (88 + yellowPos.faceY)) + 'px';
+      blackEyes.style.left = (isErrorState ? 18 : (state.passwordLength > 0 && state.showPassword) ? 10 : isProtectedPassword ? 18 : state.isLookingAtEachOther ? 32 : (26 + blackPos.faceX)) + 'px';
+      blackEyes.style.top = (isErrorState ? 18 : (state.passwordLength > 0 && state.showPassword) ? 28 : isProtectedPassword ? 24 : state.isLookingAtEachOther ? 12 : (32 + blackPos.faceY)) + 'px';
+
+      orange.style.transform = isErrorState ? 'skewX(-3deg) translateY(6px)' : (state.passwordLength > 0 && state.showPassword) ? 'skewX(0deg)' : isProtectedPassword ? 'skewX(2deg) translateY(4px)' : 'skewX(' + (orangePos.bodySkew || 0) + 'deg)';
+      yellow.style.transform = isErrorState ? 'skewX(3deg) translateY(5px)' : (state.passwordLength > 0 && state.showPassword) ? 'skewX(0deg)' : isProtectedPassword ? 'skewX(-2deg) translateY(2px)' : 'skewX(' + (yellowPos.bodySkew || 0) + 'deg)';
+      orangeEyes.style.left = (isErrorState ? 72 : (state.passwordLength > 0 && state.showPassword) ? 50 : isProtectedPassword ? 86 : (82 + orangePos.faceX)) + 'px';
+      orangeEyes.style.top = (isErrorState ? 104 : (state.passwordLength > 0 && state.showPassword) ? 85 : isProtectedPassword ? 100 : (90 + orangePos.faceY)) + 'px';
+      yellowEyes.style.left = (isErrorState ? 46 : (state.passwordLength > 0 && state.showPassword) ? 20 : isProtectedPassword ? 56 : (52 + yellowPos.faceX)) + 'px';
+      yellowEyes.style.top = (isErrorState ? 50 : (state.passwordLength > 0 && state.showPassword) ? 35 : isProtectedPassword ? 48 : (40 + yellowPos.faceY)) + 'px';
+      yellowMouth.style.left = (isErrorState ? 42 : (state.passwordLength > 0 && state.showPassword) ? 10 : isProtectedPassword ? 46 : (40 + yellowPos.faceX)) + 'px';
+      yellowMouth.style.top = (isErrorState ? 98 : (state.passwordLength > 0 && state.showPassword) ? 88 : isProtectedPassword ? 96 : (88 + yellowPos.faceY)) + 'px';
       eyeballs.forEach(function (eb) {
         const owner = eb.dataset.owner;
         const blink = owner === 'purple' ? state.isPurpleBlinking : state.isBlackBlinking;
@@ -357,8 +367,8 @@ function loginPage() {
         eb.style.height = blink ? '2px' : (w + 'px');
         eb.querySelectorAll('.pupil').forEach(function (p) { p.style.opacity = blink ? '0' : '1'; });
       });
-      const purpleForce = (state.passwordLength > 0 && state.showPassword) ? { x: state.isPurplePeeking ? 4 : -4, y: state.isPurplePeeking ? 5 : -4 } : state.isLookingAtEachOther ? { x: 3, y: 4 } : null;
-      const blackForce = (state.passwordLength > 0 && state.showPassword) ? { x: -4, y: -4 } : state.isLookingAtEachOther ? { x: 0, y: -4 } : null;
+      const purpleForce = isErrorState ? { x: 5, y: 2 } : (state.passwordLength > 0 && state.showPassword) ? { x: state.isPurplePeeking ? 6 : -6, y: state.isPurplePeeking ? 7 : -5 } : isProtectedPassword ? { x: -5, y: -4 } : state.isLookingAtEachOther ? { x: 3, y: 4 } : null;
+      const blackForce = isErrorState ? { x: -5, y: 0 } : (state.passwordLength > 0 && state.showPassword) ? { x: -5, y: -5 } : isProtectedPassword ? { x: -4, y: -3 } : state.isLookingAtEachOther ? { x: 0, y: -4 } : null;
       eyeballs.forEach(function (eb) {
         const owner = eb.dataset.owner;
         const max = parseFloat(eb.dataset.max || '5');
@@ -367,7 +377,7 @@ function loginPage() {
         const force = owner === 'purple' ? purpleForce : blackForce;
         setPupilTransform(p, eb, max, force || undefined);
       });
-      const oyForce = (state.passwordLength > 0 && state.showPassword) ? { x: -5, y: -4 } : null;
+      const oyForce = isErrorState ? { x: -3, y: 1 } : (state.passwordLength > 0 && state.showPassword) ? { x: -6, y: -4 } : isProtectedPassword ? { x: 2, y: 0 } : null;
       pupilOnly.forEach(function (po) {
         const max = parseFloat(po.dataset.max || '5');
         setPupilTransform(po, po, max, oyForce || undefined);
@@ -376,18 +386,32 @@ function loginPage() {
     }
     requestAnimationFrame(render);
     function setError(msg) {
-      if (!msg) { errBox.style.display = 'none'; errBox.textContent = ''; return; }
+      if (!msg) {
+        state.hasError = false;
+        errBox.style.display = 'none';
+        errBox.textContent = '';
+        return;
+      }
+      state.hasError = true;
       errBox.style.display = 'block';
       errBox.textContent = msg;
+      setTimeout(function () { state.hasError = false; }, 900);
     }
-    passwordEl.addEventListener('focus', function () { setIsTyping(true); });
-    passwordEl.addEventListener('blur', function () { setIsTyping(false); });
+    passwordEl.addEventListener('focus', function () {
+      state.isPasswordFocused = true;
+      setIsTyping(false);
+    });
+    passwordEl.addEventListener('blur', function () {
+      state.isPasswordFocused = false;
+      setIsTyping(false);
+    });
     passwordEl.addEventListener('input', function () { setPasswordLength(passwordEl.value.length); setError(''); });
     togglePw.addEventListener('click', function () {
       const next = passwordEl.type !== 'text';
       passwordEl.type = next ? 'text' : 'password';
       togglePw.textContent = next ? '🙈' : '👁';
       setShowPassword(next);
+      if (!next) state.isPurplePeeking = false;
     });
     themeBtn.addEventListener('click', function () {
       setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
