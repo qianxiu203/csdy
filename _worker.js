@@ -539,9 +539,13 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border); font-family: monospace; font-size: 0.82rem; line-height: 1.7; word-break: break-all;">
                     <div>状态：<span id="echStatusText">读取中...</span></div>
-                    <div>DoH：<span id="echStatusDoh">-</span></div>
-                    <div>ECH 域名：<span id="echStatusQueryName">-</span></div>
+                    <div>当前 DoH：<span id="echStatusDoh">-</span></div>
+                    <div>当前 ECH 域名：<span id="echStatusQueryName">-</span></div>
                     <div>配置来源：<span id="echStatusSource">-</span></div>
+                    <div>环境变量 DoH：<span id="echEnvDoh">-</span></div>
+                    <div>环境变量 ECH 域名：<span id="echEnvQueryName">-</span></div>
+                    <div>代码默认 DoH：<span id="echDefaultDoh">-</span></div>
+                    <div>代码默认 ECH 域名：<span id="echDefaultQueryName">-</span></div>
                 </div>
             </div>
         </main>
@@ -590,6 +594,10 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         document.getElementById('echStatusDoh').textContent = echState.doh || '-';
         document.getElementById('echStatusQueryName').textContent = echState.queryServerName || '-';
         document.getElementById('echStatusSource').textContent = echState.source || '-';
+        document.getElementById('echEnvDoh').textContent = echState.envDoh || '-';
+        document.getElementById('echEnvQueryName').textContent = echState.envQueryServerName || '-';
+        document.getElementById('echDefaultDoh').textContent = echState.defaultDoh || '-';
+        document.getElementById('echDefaultQueryName').textContent = echState.defaultQueryServerName || '-';
         document.getElementById('subEchStatus').textContent = enabled ? 'ECH 已启用' : 'ECH 未启用';
         document.getElementById('subEchStatus').style.color = statusColor;
         document.getElementById('subEchDesc').textContent = enabled
@@ -715,7 +723,12 @@ async function readEchConfig(env) {
         doh,
         queryServerName,
         source,
-        kvBound: !!env.POOL_STATE
+        kvBound: !!env.POOL_STATE,
+        envEnabled: envEnabled === 'yes',
+        envDoh,
+        envQueryServerName,
+        defaultDoh: DEFAULT_ECH_DOH,
+        defaultQueryServerName: DEFAULT_ECH_QUERY_SERVER_NAME
     };
 }
 
@@ -726,14 +739,16 @@ async function saveEchConfig(env, payload = {}) {
 
     const currentConfig = await readEchConfig(env);
     const enabled = normalizeYesNo(payload.ech_enabled, currentConfig.enabled ? 'yes' : 'no');
-    const doh = String(payload.ech_doh || '').trim() || DEFAULT_ECH_DOH;
-    const queryServerName = String(payload.ech_query_server_name || '').trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+    const doh = String(payload.ech_doh || '').trim();
+    const queryServerName = String(payload.ech_query_server_name || '').trim();
 
-    await Promise.all([
-        env.POOL_STATE.put('ech_enabled', enabled),
-        env.POOL_STATE.put('ech_doh', doh),
-        env.POOL_STATE.put('ech_query_server_name', queryServerName)
-    ]);
+    const tasks = [env.POOL_STATE.put('ech_enabled', enabled)];
+    if (doh) tasks.push(env.POOL_STATE.put('ech_doh', doh));
+    else tasks.push(env.POOL_STATE.delete('ech_doh'));
+    if (queryServerName) tasks.push(env.POOL_STATE.put('ech_query_server_name', queryServerName));
+    else tasks.push(env.POOL_STATE.delete('ech_query_server_name'));
+
+    await Promise.all(tasks);
 
     return readEchConfig(env);
 }
