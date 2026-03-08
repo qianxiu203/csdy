@@ -210,8 +210,8 @@ function loginPage() {
       <div>
         <div class="brand"><div class="logo">🧭</div><div>CareerCompass</div></div>
         <div class="leftCopy">
-          <h2>安全、直观、优雅地进入管理后台</h2>
-          <p>保留当前密码鉴权机制，同时升级登录体验。输入管理密码后即可进入调度控制台。</p>
+          
+          
         </div>
       </div>
       <div class="stageWrap">
@@ -222,13 +222,13 @@ function loginPage() {
           <div class="char yellow" id="c_yellow"><div class="eyesRow yellowEyes" id="yellow_eyes"><div class="pupilOnly" data-owner="yellow" data-max="5"></div><div class="pupilOnly" data-owner="yellow" data-max="5"></div></div><div class="yellowMouth" id="yellow_mouth"></div></div>
         </div>
       </div>
-      <div class="leftBottom"><a href="javascript:void(0)">管理入口</a><a href="javascript:void(0)">Cookie 鉴权</a></div>
+      
     </section>
     <section class="right">
       <div class="card">
         <div class="mobileBrand"><div class="logo">🧭</div><div>CareerCompass</div></div>
         <h1>管理后台登录</h1>
-        <p class="sub">请输入管理密码以继续访问控制台。系统将沿用当前的 <code>auth</code> Cookie 鉴权逻辑。</p>
+        <p class="sub">请输入管理密码以继续访问控制台。</p>
         <form id="loginForm">
           <div class="field">
             <label for="password">管理密码</label>
@@ -664,5 +664,6 @@ export default {
         } catch (e) { return new Response(e.stack, { status: 500 }); }
     }
 };
+
 
 
