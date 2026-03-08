@@ -486,8 +486,8 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     </div>
                 </div>
                 <div class="input-group">
-                    <label class="input-label">参数注入：ProxyIP（可选，留空使用默认）</label>
-                    <input type="text" id="customIP" value="" placeholder="默认：${proxyip || '未设置'}；手动覆盖时才注入" oninput="updateLink()">
+                    <label class="input-label">当前默认 ProxyIP（仅显示）</label>
+                    <input type="text" value="${proxyip || '未设置'}" readonly style="font-family: monospace; font-size: 0.85rem; opacity: 0.9;">
                 </div>
                 <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border);">
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">ECH 当前状态</div>
@@ -570,12 +570,6 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                 '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
             '</div>';
         }).join('');
-    }
-
-    function updateLink() {
-        const ip = document.getElementById('customIP').value.trim();
-        const base = "https://" + window.location.hostname + "/" + subPass;
-        document.getElementById('subLink').value = ip ? base + "?proxyip=" + ip : base;
     }
 
     function renderEchCard() {
@@ -672,7 +666,6 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
     }
 
     renderDomains();
-    updateLink();
     renderEchCard();
     loadEchConfig();
     </script></body></html>`;
