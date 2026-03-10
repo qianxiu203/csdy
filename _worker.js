@@ -7,7 +7,6 @@ const SUB_PASSWORD = "";      // 订阅路径密码
 const DEFAULT_PROXY_IP = "";  // 默认 Proxy IP
 const NODE_DEFAULT_PATH = "/api/v1"; 
 const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
-
 const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
 const DEFAULT_ECH_ENABLED = 'no';
 const DEFAULT_ECH_DOH = '';
@@ -82,35 +81,6 @@ input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 2
     padding: 0.75rem; border-radius: 8px; border: 1px solid transparent;
 }
 .list-item.active { background: rgba(79, 70, 229, 0.05); border-color: var(--primary); }
-
-.sub-hero {
-    grid-column: 1 / -1;
-    position: relative;
-    border: 1px solid var(--border);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    overflow: hidden;
-}
-.sub-hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(700px 220px at 8% 0%, rgba(79, 70, 229, 0.12), transparent 60%);
-    pointer-events: none;
-}
-.sub-hero .card-header { font-size: 1.15rem; }
-.sub-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.25rem; position: relative; z-index: 1; }
-@media (max-width: 900px) { .sub-layout { grid-template-columns: 1fr; } }
-.section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.4rem; }
-.action-row { display: flex; gap: 0.5rem; align-items: center; }
-.action-row input { flex: 1; }
-.mono-input { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; }
-.status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-@media (max-width: 768px) { .status-grid { grid-template-columns: 1fr; } }
-.status-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.65rem; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-page); font-weight: 700; font-size: 0.8rem; }
-.mono-block { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.85rem; background: var(--bg-page); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; word-break: break-all; line-height: 1.6; }
-.details-box { padding: 0.85rem; border-radius: 10px; border: 1px dashed var(--border); background: var(--bg-page); }
-.details-box summary { cursor: pointer; font-weight: 600; color: var(--text-muted); }
-.details-box[open] summary { color: var(--text-main); }
 
 #toast {
     position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
@@ -505,44 +475,30 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         </section>
 
         <main class="grid">
-            <div class="card sub-hero">
+            <div class="card">
                 <div class="card-header">🔗 订阅分发</div>
-                <div class="sub-layout">
-                    <div>
-                        <div class="input-group">
-                            <label class="input-label">主订阅链接</label>
-                            <div class="action-row">
-                                <input type="text" id="subLink" value="https://${host}/${subpass}" readonly class="mono-input">
-                                <button class="btn btn-primary" onclick="copyVal('subLink')">复制</button>
-                            </div>
-                        </div>
-                        <details class="details-box">
-                            <summary>系统环境信息</summary>
-                            <div class="mono-block">
-                                UUID: ${uuid}<br>
-                                PATH: ${NODE_DEFAULT_PATH}<br>
-                                DEFAULT_PROXY_IP: ${proxyip || '未设置'}
-                            </div>
-                        </details>
+                <div class="input-group">
+                    <label class="input-label">主订阅链接</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="subLink" value="https://${host}/${subpass}" readonly style="font-family: monospace; font-size: 0.85rem;">
+                        <button class="btn btn-primary" onclick="copyVal('subLink')">复制</button>
                     </div>
-                    <div class="status-grid">
-                        <div class="details-box">
-                            <div class="section-title">ECH 当前状态</div>
-                            <div id="subEchStatus" style="font-size: 0.95rem; font-weight: 700;">读取中...</div>
-                            <div id="subEchDesc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.6;"></div>
-                        </div>
-                        <div class="details-box">
-                            <div class="section-title">当前默认 ProxyIP（仅显示）</div>
-                            <div class="mono-block">${proxyip || '未设置'}</div>
-                        </div>
-                        <div class="details-box">
-                            <div class="section-title">可用 IP 数</div>
-                            <div class="status-pill">${nodeCount}</div>
-                        </div>
-                        <div class="details-box">
-                            <div class="section-title">域名池状态</div>
-                            <div class="status-pill">${poolDomains.length}</div>
-                        </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">当前默认 ProxyIP（仅显示）</label>
+                    <input type="text" value="${proxyip || '未设置'}" readonly style="font-family: monospace; font-size: 0.85rem; opacity: 0.9;">
+                </div>
+                <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border);">
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">ECH 当前状态</div>
+                    <div id="subEchStatus" style="font-size: 0.95rem; font-weight: 700;">读取中...</div>
+                    <div id="subEchDesc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.6;"></div>
+                </div>
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                    <label class="input-label">系统环境信息</label>
+                    <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
+                        UUID: ${uuid}<br>
+                        PATH: ${NODE_DEFAULT_PATH}<br>
+                        DEFAULT_PROXY_IP: ${proxyip || '未设置'}
                     </div>
                 </div>
             </div>
