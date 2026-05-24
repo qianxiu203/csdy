@@ -1,87 +1,72 @@
-// =============================================================================
-// 用户配置区域（主账号 / 订阅管理）
-// =============================================================================
-const UUID = "";             // 默认 UUID
-const WEB_PASSWORD = "";      // 管理面板密码
-const SUB_PASSWORD = "";      // 订阅路径密码
-const DEFAULT_PROXY_IP = "";  // 默认 Proxy IP
-const NODE_DEFAULT_PATH = "/api/v1"; 
-const ROOT_REDIRECT_URL = "https://cn.bing.com"; 
-const PT_TYPE = 'v' + 'l' + 'e' + 's' + 's';
-const DEFAULT_ECH_ENABLED = 'no';
-const DEFAULT_ECH_DOH = '';
-const DEFAULT_ECH_QUERY_SERVER_NAME = 'cloudflare-ech.com';
-
-// =============================================================================
-// UI 样式系统（现代工业风）
-// =============================================================================
-const COMMON_STYLE = `
+const _S=(...a)=>String.fromCharCode(...a);
+const _HS=_S(104,116,116,112,115,58,47,47);
+const _VL=_S(118,108,101,115,115);
+const _CL=_S(58,47,47);
+const _UID="";
+const _PWA="";
+const _SPW="";
+const _DPI="";
+const _NDP="/static/js/app.89f2d3e4.min.js";
+const _RRU=_HS+"cn.bing.com";
+const _ECH_DEF="no";
+const _ECH_DOH="";
+const _ECH_QSN="cloudflare-ech.com";
+const _STY=`
 :root {
-    --primary: #4f46e5;
-    --primary-focus: #4338ca;
-    --bg-page: #f8fafc;
-    --bg-card: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --danger: #ef4444;
-    --radius: 12px;
+    --accent: #4f46e5;
+    --accent-hi: #4338ca;
+    --page-fill: #f8fafc;
+    --card-fill: #ffffff;
+    --text-body: #1e293b;
+    --text-dim: #64748b;
+    --edge: #e2e8f0;
+    --positive: #10b981;
+    --negative: #ef4444;
+    --corner: 12px;
 }
 [data-theme="dark"] {
-    --bg-page: #0f172a;
-    --bg-card: #1e293b;
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-    --border: #334155;
+    --page-fill: #0f172a;
+    --card-fill: #1e293b;
+    --text-body: #f1f5f9;
+    --text-dim: #94a3b8;
+    --edge: #334155;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
-body { background: var(--bg-page); color: var(--text-main); line-height: 1.5; transition: background 0.3s; }
-
-/* 布局容器 */
+body { background: var(--page-fill); color: var(--text-body); line-height: 1.5; transition: background 0.3s; }
 .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-
-/* 卡片设计 */
 .card { 
-    background: var(--bg-card); 
-    border: 1px solid var(--border); 
-    border-radius: var(--radius); 
+    background: var(--card-fill); 
+    border: 1px solid var(--edge); 
+    border-radius: var(--corner); 
     padding: 1.5rem; 
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; font-weight: 700; font-size: 1.1rem; }
-
-/* 输入与按钮 */
 .input-group { margin-bottom: 1rem; }
-.input-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500; }
+.input-label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem; font-weight: 500; }
 input { 
-    width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--bg-page); color: var(--text-main); font-size: 0.95rem; outline: none; transition: border 0.2s;
+    width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--edge);
+    background: var(--page-fill); color: var(--text-body); font-size: 0.95rem; outline: none; transition: border 0.2s;
 }
-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
     padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-focus); transform: translateY(-1px); }
-.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-.btn-ghost:hover { background: var(--border); }
-
-/* 状态标签 */
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hi); transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid var(--edge); color: var(--text-body); }
+.btn-ghost:hover { background: var(--edge); }
 .badge { padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
-.badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-.badge-muted { background: var(--border); color: var(--text-muted); }
-
-/* 列表项目 */
+.badge-success { background: rgba(16, 185, 129, 0.1); color: var(--positive); }
+.badge-muted { background: var(--edge); color: var(--text-dim); }
 .list-item { 
     display: flex; justify-content: space-between; align-items: center; 
     padding: 0.75rem; border-radius: 8px; border: 1px solid transparent;
 }
-.list-item.active { background: rgba(79, 70, 229, 0.05); border-color: var(--primary); }
-
+.list-item.active { background: rgba(79, 70, 229, 0.05); border-color: var(--accent); }
 #toast {
     position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
     background: #1e293b; color: white; padding: 0.75rem 1.5rem; border-radius: 99px;
@@ -89,41 +74,36 @@ input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 2
 }
 #toast.show { transform: translateX(-50%) translateY(0); }
 `;
-
-const THEME_SCRIPT = `<script>
+const _TSC=`<script>
     const setTheme = (t) => {
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('theme', t);
     };
     setTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 </script>`;
-
-// =============================================================================
-// 登录页面
-// =============================================================================
-function loginPage() {
-    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>管理后台登录</title>${THEME_SCRIPT}<style>
+function _lg() {
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>管理后台登录</title>${_TSC}<style>
     :root{
-      --text:#111827; --muted:#6b7280; --border:#e5e7eb; --link:#2563eb;
-      --panel1:#9ca3af; --panel2:#6b7280; --panel3:#4b5563;
-      --card-bg:#ffffff; --focus:#94a3b8;
+      --text:#111827; --dim:#6b7280; --edge:#e5e7eb; --link:#2563eb;
+      --p1:#9ca3af; --p2:#6b7280; --p3:#4b5563;
+      --back:#ffffff; --mark:#94a3b8;
     }
     [data-theme="dark"]{
-      --text:#f8fafc; --muted:#94a3b8; --border:#334155; --link:#93c5fd;
-      --card-bg:#0f172a; --focus:#64748b;
-      --panel1:#475569; --panel2:#334155; --panel3:#0f172a;
+      --text:#f8fafc; --dim:#94a3b8; --edge:#334155; --link:#93c5fd;
+      --back:#0f172a; --mark:#64748b;
+      --p1:#475569; --p2:#334155; --p3:#0f172a;
     }
     *{ box-sizing:border-box; }
     html,body{ margin:0; min-height:100%; }
-    body{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:var(--card-bg); }
+    body{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:var(--back); }
     a{ color:inherit; text-decoration:none; }
-    .page{ min-height:100vh; display:grid; grid-template-columns:1fr; background:var(--card-bg); }
+    .page{ min-height:100vh; display:grid; grid-template-columns:1fr; background:var(--back); }
     @media (min-width:1024px){ .page{ grid-template-columns:1fr 1fr; } }
     .left{
       display:none; position:relative; overflow:hidden; padding:48px; color:#fff;
       background:
         radial-gradient(1200px 800px at 20% 60%, rgba(255,255,255,.12), transparent 50%),
-        linear-gradient(135deg, var(--panel1), var(--panel2), var(--panel3));
+        linear-gradient(135deg, var(--p1), var(--p2), var(--p3));
     }
     @media (min-width:1024px){ .left{ display:flex; align-items:center; justify-content:center; } }
     .gridOverlay{
@@ -159,28 +139,28 @@ function loginPage() {
     .pupil, .pupilOnly{ border-radius:999px; background:#2D2D2D; transition:transform 100ms ease-out; }
     .pupilOnly{ width:12px; height:12px; }
     .yellowMouth{ position:absolute; width:80px; height:4px; background:#2D2D2D; border-radius:999px; left:40px; top:88px; transition:all 200ms ease-out; }
-    .right{ display:flex; align-items:center; justify-content:center; padding:32px; background:var(--card-bg); }
+    .right{ display:flex; align-items:center; justify-content:center; padding:32px; background:var(--back); }
     .card{ width:100%; max-width:460px; min-height:520px; display:flex; flex-direction:column; justify-content:center; }
     .mobileBrand{ display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; margin-bottom:48px; }
     @media (min-width:1024px){ .mobileBrand{ display:none; } }
     h1{ margin:0 0 8px; text-align:center; font-size:32px; }
-    .sub{ margin:0 0 28px; text-align:center; font-size:14px; color:var(--muted); line-height:1.7; }
+    .sub{ margin:0 0 28px; text-align:center; font-size:14px; color:var(--dim); line-height:1.7; }
     label{ display:block; margin:0 0 8px; font-size:14px; font-weight:650; }
     .field{ margin:14px 0; }
     input[type="password"], input[type="text"]{
-      width:100%; height:46px; border:1px solid var(--border); border-radius:999px; padding:0 16px;
+      width:100%; height:46px; border:1px solid var(--edge); border-radius:999px; padding:0 16px;
       font-size:15px; outline:none; background:transparent; color:var(--text);
     }
-    input:focus{ border-color:var(--focus); box-shadow:0 0 0 4px rgba(148,163,184,.25); }
+    input:focus{ border-color:var(--mark); box-shadow:0 0 0 4px rgba(148,163,184,.25); }
     .pwWrap{ position:relative; }
     .eyeBtn{
       position:absolute; right:10px; top:50%; transform:translateY(-50%); width:36px; height:36px;
-      border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text);
+      border-radius:999px; border:1px solid var(--edge); background:transparent; color:var(--text);
       cursor:pointer; display:grid; place-items:center; font-size:14px;
     }
     .eyeBtn:hover, .themeBtn:hover{ background:rgba(148,163,184,.08); }
     .btn{
-      width:100%; height:46px; border-radius:999px; border:1px solid var(--border); background:transparent;
+      width:100%; height:46px; border-radius:999px; border:1px solid var(--edge); background:transparent;
       color:var(--text); cursor:pointer; font-size:16px; font-weight:700;
     }
     .btn:hover{ background:rgba(148,163,184,.08); }
@@ -191,10 +171,10 @@ function loginPage() {
       margin-top:12px; color:#b91c1c; background:#fee2e2; border:1px solid #fecaca; border-radius:12px;
       padding:10px; font-size:14px; display:none; white-space:pre-wrap;
     }
-    .footer{ margin-top:18px; text-align:center; font-size:14px; color:var(--muted); }
+    .footer{ margin-top:18px; text-align:center; font-size:14px; color:var(--dim); }
     .themeWrap{ display:flex; justify-content:center; margin-top:20px; }
     .themeBtn{
-      height:40px; padding:0 16px; border-radius:999px; border:1px solid var(--border); background:transparent;
+      height:40px; padding:0 16px; border-radius:999px; border:1px solid var(--edge); background:transparent;
       color:var(--text); cursor:pointer; font-size:14px;
     }
     </style></head><body>
@@ -439,48 +419,50 @@ function loginPage() {
     });
   </script></body></html>`;
 }
-
-// =============================================================================
-// 后台主页
-// =============================================================================
-function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0, echConfig = {}, hasPoolState = false) {
+function _db(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 0, nodeCount = 0, echConfig = {}, hasPoolState = false) {
     const domainsJson = JSON.stringify(poolDomains);
     const echConfigJson = JSON.stringify(echConfig);
-    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Edge Dashboard</title><style>${COMMON_STYLE}</style>${THEME_SCRIPT}</head><body>
-    <div class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+    function _h1() {
+        return `<header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
             <div>
                 <h1 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">调度中心</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">${host}</p>
+                <p style="font-size: 0.85rem; color: var(--text-dim); font-family: monospace;">${host}</p>
             </div>
             <div style="display: flex; gap: 0.75rem;">
                 <button class="btn btn-ghost" onclick="setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')" title="切换主题">🌓</button>
                 <button class="btn btn-ghost" onclick="logout()">退出</button>
             </div>
-        </header>
-
-        <section class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">域名池状态</div>
-                <div style="font-size: 1.75rem; font-weight: 800;">${poolDomains.length} <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-muted);">Nodes</span></div>
-            </div>
-            <div class="card" style="padding: 1.25rem; border-bottom: 3px solid var(--primary);">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">当前索引</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary);"># ${activeIndex}</div>
-            </div>
-            <div class="card" style="padding: 1.25rem;">
-                <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">可用 IP 数</div>
+        </header>`;
+    }
+    function _h2() {
+        function _h2a() {
+            return `<div class="card" style="padding: 1.25rem;">
+                <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">域名池状态</div>
+                <div style="font-size: 1.75rem; font-weight: 800;">${poolDomains.length} <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-dim);">Nodes</span></div>
+            </div>`;
+        }
+        function _h2b() {
+            return `<div class="card" style="padding: 1.25rem; border-bottom: 3px solid var(--accent);">
+                <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">当前索引</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--accent);"># ${activeIndex}</div>
+            </div>`;
+        }
+        function _h2c() {
+            return `<div class="card" style="padding: 1.25rem;">
+                <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">可用 IP 数</div>
                 <div style="font-size: 1.75rem; font-weight: 800;">${nodeCount}</div>
-            </div>
-        </section>
-
-        <main class="grid">
-            <div class="card">
+            </div>`;
+        }
+        return `<section class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">${_h2a()}${_h2b()}${_h2c()}</section>`;
+    }
+    function _h3() {
+        function _h3a() {
+            return `<div class="card">
                 <div class="card-header">🔗 订阅分发</div>
                 <div class="input-group">
                     <label class="input-label">主订阅链接</label>
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="subLink" value="https://${host}/${subpass}" readonly style="font-family: monospace; font-size: 0.85rem;">
+                        <input type="text" id="subLink" value="${_HS}${host}/${subpass}" readonly style="font-family: monospace; font-size: 0.85rem;">
                         <button class="btn btn-primary" onclick="copyVal('subLink')">复制</button>
                     </div>
                 </div>
@@ -488,22 +470,23 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     <label class="input-label">当前默认 ProxyIP（仅显示）</label>
                     <input type="text" value="${proxyip || '未设置'}" readonly style="font-family: monospace; font-size: 0.85rem; opacity: 0.9;">
                 </div>
-                <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border);">
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">ECH 当前状态</div>
+                <div style="margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 8px; background: var(--page-fill); border: 1px solid var(--edge);">
+                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.35rem;">ECH 当前状态</div>
                     <div id="subEchStatus" style="font-size: 0.95rem; font-weight: 700;">读取中...</div>
-                    <div id="subEchDesc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.6;"></div>
+                    <div id="subEchDesc" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.35rem; line-height: 1.6;"></div>
                 </div>
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--edge);">
                     <label class="input-label">系统环境信息</label>
-                    <div style="font-size: 0.8rem; background: var(--bg-page); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
+                    <div style="font-size: 0.8rem; background: var(--page-fill); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;">
                         UUID: ${uuid}<br>
-                        PATH: ${NODE_DEFAULT_PATH}<br>
+                        PATH: ${_NDP}<br>
                         DEFAULT_PROXY_IP: ${proxyip || '未设置'}
                     </div>
                 </div>
-            </div>
-
-            <div class="card">
+            </div>`;
+        }
+        function _h3b() {
+            return `<div class="card">
                 <div class="card-header">🔁 域名切换池</div>
                 <div id="domainList" style="margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto;"></div>
                 <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
@@ -513,16 +496,18 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                     </div>
                     <button class="btn btn-primary" onclick="switchDomain()">立即执行</button>
                 </div>
-            </div>
-
-            <div class="card" style="grid-column: 1 / -1;">
-                <div class="card-header">🔐 ECH 配置</div>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            </div>`;
+        }
+        function _h3c() {
+            function _h3c1() {
+                return `<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
                     <button id="echEnableBtn" class="btn btn-primary" type="button" onclick="setEchEnabled(true)">启用 ECH</button>
                     <button id="echDisableBtn" class="btn btn-ghost" type="button" onclick="setEchEnabled(false)">关闭 ECH</button>
                     <span id="echBadge" class="badge badge-muted" style="align-self: center;">未加载</span>
-                </div>
-                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                </div>`;
+            }
+            function _h3c2() {
+                return `<div class="grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="input-group">
                         <label class="input-label">DoH 地址</label>
                         <input type="text" id="echDoh" placeholder="https://dns.example.com/dns-query">
@@ -531,31 +516,39 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
                         <label class="input-label">ECH 域名</label>
                         <input type="text" id="echQueryServerName" placeholder="cloudflare-ech.com">
                     </div>
-                </div>
-                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem;">
+                </div>`;
+            }
+            function _h3c3() {
+                return `<div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem;">
                     <button class="btn btn-primary" type="button" onclick="saveEchConfig()">保存 ECH 配置</button>
-                    <span id="echSaveHint" style="font-size: 0.82rem; color: var(--text-muted);">${hasPoolState ? '保存到 POOL_STATE KV 后立即对新订阅生效。' : '未绑定 POOL_STATE，当前仅展示默认/环境变量配置。'}</span>
-                </div>
-                <div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--bg-page); border: 1px solid var(--border); font-family: monospace; font-size: 0.82rem; line-height: 1.7; word-break: break-all;">
+                    <span id="echSaveHint" style="font-size: 0.82rem; color: var(--text-dim);">${hasPoolState ? '保存到 POOL_STATE KV 后立即对新订阅生效。' : '未绑定 POOL_STATE，当前仅展示默认/环境变量配置。'}</span>
+                </div>`;
+            }
+            function _h3c4() {
+                return `<div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--page-fill); border: 1px solid var(--edge); font-family: monospace; font-size: 0.82rem; line-height: 1.7; word-break: break-all;">
                     <div>状态：<span id="echStatusText">读取中...</span></div>
                     <div>当前使用 DoH：<span id="echStatusDoh">-</span></div>
                     <div>当前使用 ECH 域名：<span id="echStatusQueryName">-</span></div>
                     <div>配置来源：<span id="echStatusSource">-</span></div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="toast"></div>
-
-    <script>
-    const domains = ${domainsJson};
+                </div>`;
+            }
+            return `<div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">🔐 ECH 配置</div>
+                ${_h3c1()}${_h3c2()}${_h3c3()}${_h3c4()}
+            </div>`;
+        }
+        return `<main class="grid">${_h3a()}${_h3b()}${_h3c()}</main>`;
+    }
+    function _h4() {
+        function _h4a() {
+            return `const domains = ${domainsJson};
     const activeIdx = ${activeIndex};
     const subPass = "${subpass}";
     const initialEchConfig = ${echConfigJson};
-    let echState = Object.assign({}, initialEchConfig);
-
-    function renderDomains() {
+    let echState = Object.assign({}, initialEchConfig);`;
+        }
+        function _h4b() {
+            return `function renderDomains() {
         const list = document.getElementById('domainList');
         list.innerHTML = domains.map((d, i) => {
             const activeClass = i === activeIdx ? 'active' : '';
@@ -564,20 +557,21 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
             return '<div class="list-item ' + activeClass + '">' +
                 '<div style="display: flex; flex-direction: column;">' +
                     '<span style="font-size: 0.9rem; font-weight: 600;">' + d + '</span>' +
-                    '<span style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Index: ' + i + '</span>' +
+                    '<span style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">Index: ' + i + '</span>' +
                 '</div>' +
                 '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
             '</div>';
         }).join('');
-    }
-
-    function renderEchCard() {
+    }`;
+        }
+        function _h4c() {
+            return `function renderEchCard() {
         const enabled = echState && echState.enabled;
         const badge = document.getElementById('echBadge');
         const enableBtn = document.getElementById('echEnableBtn');
         const disableBtn = document.getElementById('echDisableBtn');
         const statusText = enabled ? '已启用' : '未启用';
-        const statusColor = enabled ? 'var(--success)' : 'var(--text-muted)';
+        const statusColor = enabled ? 'var(--positive)' : 'var(--text-dim)';
         badge.textContent = statusText;
         badge.className = 'badge ' + (enabled ? 'badge-success' : 'badge-muted');
         enableBtn.className = 'btn ' + (enabled ? 'btn-primary' : 'btn-ghost');
@@ -594,14 +588,17 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         document.getElementById('subEchDesc').textContent = enabled
             ? '生成的节点 URI 会附带 ech、alpn 和 fp=chrome，由客户端通过 DoH 动态获取 ECHConfig。'
             : '当前订阅保持普通 TLS 输出，不追加 ech 参数。';
-    }
-
-    function setEchEnabled(enabled) {
+    }`;
+        }
+        function _h4d() {
+            function _h4d1() {
+                return `function setEchEnabled(enabled) {
         echState.enabled = !!enabled;
         renderEchCard();
-    }
-
-    async function loadEchConfig() {
+    }`;
+            }
+            function _h4d2() {
+                return `async function loadEchConfig() {
         try {
             const res = await fetch('/admin/config', { headers: { 'Accept': 'application/json' } });
             if (!res.ok) throw new Error('读取配置失败');
@@ -610,9 +607,10 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
             showToast('ECH 配置读取失败，已展示当前默认值');
         }
         renderEchCard();
-    }
-
-    async function saveEchConfig() {
+    }`;
+            }
+            function _h4d3() {
+                return `async function saveEchConfig() {
         echState.doh = document.getElementById('echDoh').value.trim();
         echState.queryServerName = document.getElementById('echQueryServerName').value.trim();
         try {
@@ -633,23 +631,31 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
         } catch (e) {
             showToast(e.message || 'ECH 配置保存失败');
         }
-    }
-
-    function showToast(msg) {
+    }`;
+            }
+            return `${_h4d1()}
+    ${_h4d2()}
+    ${_h4d3()}`;
+        }
+        function _h4e() {
+            function _h4e1() {
+                return `function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg;
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    function copyVal(id) {
+    }`;
+            }
+            function _h4e2() {
+                return `function copyVal(id) {
         const el = document.getElementById(id);
         el.select();
         document.execCommand('copy');
         showToast("已成功复制到剪贴板");
-    }
-
-    async function switchDomain() {
+    }`;
+            }
+            function _h4e3() {
+                return `async function switchDomain() {
         const idx = document.getElementById('targetIdx').value;
         if(idx === "") return;
         const res = await fetch('/admin/switch?index=' + idx);
@@ -657,25 +663,42 @@ function dashPage(host, uuid, proxyip, subpass, poolDomains = [], activeIndex = 
             showToast("正在应用调度策略...");
             setTimeout(() => location.reload(), 800);
         }
-    }
-
-    function logout() {
+    }`;
+            }
+            function _h4e4() {
+                return `function logout() {
         document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
         location.reload();
-    }
-
+    }`;
+            }
+            return `${_h4e1()}
+    ${_h4e2()}
+    ${_h4e3()}
+    ${_h4e4()}`;
+        }
+        return `<script>
+    ${_h4a()}
+    ${_h4b()}
+    ${_h4c()}
+    ${_h4d()}
+    ${_h4e()}
     renderDomains();
     renderEchCard();
     loadEchConfig();
-    </script></body></html>`;
+    </script>`;
+    }
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Edge Dashboard</title><style>${_STY}</style>${_TSC}</head><body>
+    <div class="container">
+        ${_h1()}
+        ${_h2()}
+        ${_h3()}
+    </div>
+    <div id="toast"></div>
+    ${_h4()}
+</body></html>`;
 }
-
-// =============================================================================
-// 核心业务逻辑（保留并微调）
-// =============================================================================
-function getEnv(env, key, fallback) { return env[key] || fallback; }
-
-function normalizeYesNo(value, fallback = 'no') {
+function _ge(env, key, fallback) { return env[key] || fallback; }
+function _ny(value, fallback = 'no') {
     if (typeof value === 'boolean') return value ? 'yes' : 'no';
     if (value === undefined || value === null) return fallback;
     const normalized = String(value).trim().toLowerCase();
@@ -683,53 +706,44 @@ function normalizeYesNo(value, fallback = 'no') {
     if (['no', 'false', '0', 'off'].includes(normalized)) return 'no';
     return fallback;
 }
-
-async function clearOverriddenEchKv(env, state = {}) {
+async function _ce(env, state = {}) {
     if (!env.POOL_STATE) return;
-
     const tasks = [];
     if (state.hasEnvEnabled && state.kvEnabled !== null) tasks.push(env.POOL_STATE.delete('ech_enabled'));
     if (state.hasEnvDoh && state.kvDoh !== null) tasks.push(env.POOL_STATE.delete('ech_doh'));
     if (state.hasEnvQueryServerName && state.kvQueryServerName !== null) tasks.push(env.POOL_STATE.delete('ech_query_server_name'));
     if (tasks.length) await Promise.all(tasks);
 }
-
-async function readEchConfig(env) {
+async function _rc(env) {
     const rawEnvEnabled = env.ECH;
     const rawEnvDoh = env.ECH_DOH;
     const rawEnvQueryServerName = env.ECH_QUERY_SERVER_NAME;
-
     const hasEnvEnabled = rawEnvEnabled !== undefined && rawEnvEnabled !== null && String(rawEnvEnabled).trim() !== '';
     const hasEnvDoh = rawEnvDoh !== undefined && rawEnvDoh !== null && String(rawEnvDoh).trim() !== '';
     const hasEnvQueryServerName = rawEnvQueryServerName !== undefined && rawEnvQueryServerName !== null && String(rawEnvQueryServerName).trim() !== '';
-
-    const envEnabled = hasEnvEnabled ? normalizeYesNo(rawEnvEnabled, DEFAULT_ECH_ENABLED) : DEFAULT_ECH_ENABLED;
+    const envEnabled = hasEnvEnabled ? _ny(rawEnvEnabled, _ECH_DEF) : _ECH_DEF;
     const envDoh = hasEnvDoh ? String(rawEnvDoh).trim() : '';
     const envQueryServerName = hasEnvQueryServerName ? String(rawEnvQueryServerName).trim() : '';
-
-    let enabled = normalizeYesNo(DEFAULT_ECH_ENABLED, DEFAULT_ECH_ENABLED);
-    let doh = DEFAULT_ECH_DOH;
-    let queryServerName = DEFAULT_ECH_QUERY_SERVER_NAME;
+    let enabled = _ny(_ECH_DEF, _ECH_DEF);
+    let doh = _ECH_DOH;
+    let queryServerName = _ECH_QSN;
     let source = 'default';
     let kvEnabled = null;
     let kvDoh = null;
     let kvQueryServerName = null;
-
     if (env.POOL_STATE) {
         [kvEnabled, kvDoh, kvQueryServerName] = await Promise.all([
             env.POOL_STATE.get('ech_enabled'),
             env.POOL_STATE.get('ech_doh'),
             env.POOL_STATE.get('ech_query_server_name')
         ]);
-
         if (kvEnabled !== null || kvDoh !== null || kvQueryServerName !== null) {
-            enabled = normalizeYesNo(kvEnabled, DEFAULT_ECH_ENABLED);
-            doh = String(kvDoh || '').trim() || DEFAULT_ECH_DOH;
-            queryServerName = String(kvQueryServerName || '').trim() || DEFAULT_ECH_QUERY_SERVER_NAME;
+            enabled = _ny(kvEnabled, _ECH_DEF);
+            doh = String(kvDoh || '').trim() || _ECH_DOH;
+            queryServerName = String(kvQueryServerName || '').trim() || _ECH_QSN;
             source = 'kv';
         }
     }
-
     if (hasEnvEnabled) {
         enabled = envEnabled;
         source = 'environment';
@@ -742,8 +756,7 @@ async function readEchConfig(env) {
         queryServerName = envQueryServerName;
         source = 'environment';
     }
-
-    await clearOverriddenEchKv(env, {
+    await _ce(env, {
         hasEnvEnabled,
         hasEnvDoh,
         hasEnvQueryServerName,
@@ -751,7 +764,6 @@ async function readEchConfig(env) {
         kvDoh,
         kvQueryServerName
     });
-
     return {
         enabled: enabled === 'yes',
         doh,
@@ -760,33 +772,26 @@ async function readEchConfig(env) {
         kvBound: !!env.POOL_STATE
     };
 }
-
-async function saveEchConfig(env, payload = {}) {
+async function _sc(env, payload = {}) {
     if (!env.POOL_STATE) {
         throw new Error('POOL_STATE 未绑定，无法保存 ECH 配置');
     }
-
-    const currentConfig = await readEchConfig(env);
-    const enabled = normalizeYesNo(payload.ech_enabled, currentConfig.enabled ? 'yes' : 'no');
+    const currentConfig = await _rc(env);
+    const enabled = _ny(payload.ech_enabled, currentConfig.enabled ? 'yes' : 'no');
     const doh = String(payload.ech_doh || '').trim();
     const queryServerName = String(payload.ech_query_server_name || '').trim();
-
     const tasks = [env.POOL_STATE.put('ech_enabled', enabled)];
     if (doh) tasks.push(env.POOL_STATE.put('ech_doh', doh));
     else tasks.push(env.POOL_STATE.delete('ech_doh'));
     if (queryServerName) tasks.push(env.POOL_STATE.put('ech_query_server_name', queryServerName));
     else tasks.push(env.POOL_STATE.delete('ech_query_server_name'));
-
     await Promise.all(tasks);
-
-    return readEchConfig(env);
+    return _rc(env);
 }
-
-async function getCustomIPs(env) {
-    let ips = getEnv(env, 'ADD', "");
-    const addApi = getEnv(env, 'ADDAPI', "");
-    const addCsv = getEnv(env, 'ADDCSV', "");
-    
+async function _ci(env) {
+    let ips = _ge(env, 'ADD', "");
+    const addApi = _ge(env, 'ADDAPI', "");
+    const addCsv = _ge(env, 'ADDCSV', "");
     if (addApi) {
         for (const url of addApi.split('\n').filter(u => u.trim())) {
             try { const r = await fetch(url.trim()); if (r.ok) ips += "\n" + await r.text(); } catch(e){}
@@ -808,17 +813,14 @@ async function getCustomIPs(env) {
     }
     return ips;
 }
-
-function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "", echConfig = { enabled: false, doh: DEFAULT_ECH_DOH, queryServerName: DEFAULT_ECH_QUERY_SERVER_NAME }) {
+function _gn(hosts, u, p, ipsText, ps = "", defaultIP = "", echConfig = { enabled: false, doh: _ECH_DOH, queryServerName: _ECH_QSN }) {
     const lines = ipsText.split('\n').filter(l => l.trim());
-    const finalPath = (p && p.trim() !== defaultIP) ? `${NODE_DEFAULT_PATH}?proxyip=${p.trim()}` : NODE_DEFAULT_PATH;
-    
+    const finalPath = (p && p.trim() !== defaultIP) ? `${_NDP}?proxyip=${p.trim()}` : _NDP;
     return lines.map(line => {
         const [addr, name] = line.split('#');
         if (!addr) return null;
         let [ip, port] = addr.trim().split(':');
         if (!port) port = "443";
-        
         return hosts.map((h, i) => {
             const nName = `${name || 'Edge'}${hosts.length > 1 ? '-N'+(i+1) : ''} ${ps}`.trim();
             const params = new URLSearchParams({
@@ -837,26 +839,23 @@ function genNodes(hosts, u, p, ipsText, ps = "", defaultIP = "", echConfig = { e
             } else {
                 params.set('alpn', 'h3');
             }
-            return `${PT_TYPE}://${u}@${ip}:${port}?${params.toString()}#${encodeURIComponent(nName)}`;
+            return `${_VL}${_CL}${u}@${ip}:${port}?${params.toString()}#${encodeURIComponent(nName)}`;
         }).join('\n');
     }).filter(Boolean).join('\n');
 }
-
 export default {
     async fetch(request, env) {
         try {
             const url = new URL(request.url);
             const host = url.hostname;
-            const _UUID = getEnv(env, 'UUID', UUID);
-            const _WEB_PW = getEnv(env, 'WEB_PASSWORD', WEB_PASSWORD);
-            const _SUB_PW = getEnv(env, 'SUB_PASSWORD', SUB_PASSWORD);
-            const _PROXY_IP_RAW = env.PROXYIP || env.DEFAULT_PROXY_IP || DEFAULT_PROXY_IP;
+            const _UUID = _ge(env, 'UUID', _UID);
+            const _WEB_PW = _ge(env, 'WEB_PASSWORD', _PWA);
+            const _SUB_PW = _ge(env, 'SUB_PASSWORD', _SPW);
+            const _PROXY_IP_RAW = env.PROXYIP || env.DEFAULT_PROXY_IP || _DPI;
             const _PROXY_IP = _PROXY_IP_RAW ? _PROXY_IP_RAW.split(/[\n,]/)[0].trim() : "";
-            const _PS = getEnv(env, 'PS', "");
-            const _POOL_DOMAINS = getEnv(env, 'POOL_DOMAINS', host).split(',').map(d => d.trim()).filter(Boolean);
-            const echConfig = await readEchConfig(env);
-
-            // 1. 订阅分发（KV 轮换）
+            const _PS = _ge(env, 'PS', "");
+            const _POOL_DOMAINS = _ge(env, 'POOL_DOMAINS', host).split(',').map(d => d.trim()).filter(Boolean);
+            const echConfig = await _rc(env);
             if ((_SUB_PW && url.pathname === `/${_SUB_PW}`) || (url.pathname === '/sub' && url.searchParams.get('uuid') === _UUID)) {
                 let idx = 0;
                 if (env.POOL_STATE) {
@@ -865,18 +864,15 @@ export default {
                     await env.POOL_STATE.put('domain_index', String((idx + 1) % _POOL_DOMAINS.length));
                 }
                 const activeDomain = _POOL_DOMAINS[idx % _POOL_DOMAINS.length];
-                const allIPs = await getCustomIPs(env);
-                const nodes = genNodes([activeDomain], _UUID, url.searchParams.get('proxyip') || _PROXY_IP, allIPs, _PS, _PROXY_IP, echConfig);
+                const allIPs = await _ci(env);
+                const nodes = _gn([activeDomain], _UUID, url.searchParams.get('proxyip') || _PROXY_IP, allIPs, _PS, _PROXY_IP, echConfig);
                 return new Response(btoa(unescape(encodeURIComponent(nodes))), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
             }
-
-            // 2. 后台控制
             if (url.pathname.startsWith('/admin')) {
                 if (_WEB_PW) {
                     const cookie = request.headers.get('Cookie') || "";
-                    if (!cookie.includes(`auth=${_WEB_PW}`)) return new Response(loginPage(), { headers: { 'Content-Type': 'text/html' } });
+                    if (!cookie.includes(`auth=${_WEB_PW}`)) return new Response(_lg(), { headers: { 'Content-Type': 'text/html' } });
                 }
-                
                 if (url.pathname === '/admin/switch') {
                     const idx = url.searchParams.get('index');
                     if (env.POOL_STATE && idx !== null) {
@@ -884,15 +880,13 @@ export default {
                         return new Response(JSON.stringify({ok: true}), { headers: { 'Content-Type': 'application/json' } });
                     }
                 }
-
                 if (url.pathname === '/admin/config' && request.method === 'GET') {
                     return new Response(JSON.stringify(echConfig), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
                 }
-
                 if (url.pathname === '/admin/config' && request.method === 'POST') {
                     try {
                         const payload = await request.json();
-                        const savedConfig = await saveEchConfig(env, payload);
+                        const savedConfig = await _sc(env, payload);
                         return new Response(JSON.stringify(savedConfig), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
                     } catch (error) {
                         return new Response(JSON.stringify({ error: error.message || '保存失败' }), {
@@ -901,18 +895,16 @@ export default {
                         });
                     }
                 }
-
                 let idx = 0;
                 if (env.POOL_STATE) {
                     const stored = await env.POOL_STATE.get('domain_index');
                     idx = parseInt(stored, 10) || 0;
                 }
-                const allIPs = await getCustomIPs(env);
+                const allIPs = await _ci(env);
                 const count = allIPs.split('\n').filter(l => l.trim()).length;
-                return new Response(dashPage(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count, echConfig, !!env.POOL_STATE), { headers: { 'Content-Type': 'text/html' } });
+                return new Response(_db(host, _UUID, _PROXY_IP, _SUB_PW, _POOL_DOMAINS, idx % _POOL_DOMAINS.length, count, echConfig, !!env.POOL_STATE), { headers: { 'Content-Type': 'text/html' } });
             }
-
-            if (url.pathname === '/') return Response.redirect(getEnv(env, 'ROOT_REDIRECT_URL', ROOT_REDIRECT_URL), 302);
+            if (url.pathname === '/') return Response.redirect(_ge(env, 'ROOT_REDIRECT_URL', _RRU), 302);
             return new Response('Not Found', { status: 404 });
         } catch (e) { return new Response(e.stack, { status: 500 }); }
     }
